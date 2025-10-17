@@ -1,0 +1,41 @@
+# azure-pipelines.yml
+trigger:
+  - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  TARGET_DIR: '$(Build.ArtifactStagingDirectory)'
+
+steps:
+  - task: Bash@3
+    displayName: Install Rust
+    inputs:
+      targetType: inline
+      script: |
+        set -eux
+        curl https://sh.rustup.rs -sSf | sh -s -- -y
+        echo "##vso[task.prependpath]$HOME/.cargo/bin"
+        rustup default stable
+
+  - task: Bash@3
+    displayName: Build release
+    inputs:
+      targetType: inline
+      script: |
+        set -eux
+        cargo build --release
+
+  - task: Bash@3
+    displayName: Copy olcs binary to target dir
+    inputs:
+      targetType: inline
+      script: |
+        set -eux
+        mkdir -p "$(TARGET_DIR)"
+        cp target/release/olcs "$(TARGET_DIR)/"
+
+  - publish: '$(Build.ArtifactStagingDirectory)'
+    artifact: olcs-binaries
+    displayName: Publish artifact

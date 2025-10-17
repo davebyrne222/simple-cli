@@ -1,0 +1,32 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+
+# Rust/Cargo specific
+Cargo.lock
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Visual Studio / IntelliJ / IDE files
+.idea/
+.vscode/
+*.iml
+
+# Local config and secrets
+/.config/olcs-cli/
+**/last_subscription
+**/last_namespace
+**/cache/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# Artifacts folder (optional if storing in repo)
+artifact/

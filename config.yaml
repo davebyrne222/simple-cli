@@ -1,0 +1,19 @@
+# config.yaml
+# Non-sensitive information only.
+defaults:
+  subscription: dev
+subscriptions:
+  dev:
+    subscription_id: "dev-subscription-id"
+    tenant_id: "dev-tenant-id"
+    key_vault: "dev-kv"
+
+  qa:
+    subscription_id: "qa-subscription-id"
+    tenant_id: "qa-tenant-id"
+    key_vault: "qa-kv"
+
+  uat:
+    subscription_id: "uat-subscription-id"
+    tenant_id: "uat-tenant-id"
+    key_vault: "uat-kv"

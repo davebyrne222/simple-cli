@@ -1,0 +1,97 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+parameters:
+  targetVMs:
+    - name: vm1
+      sshServiceConnection: 'vm1-ssh'
+      targetPath: '/opt/olcs-cli'
+    - name: vm2
+      sshServiceConnection: 'vm2-ssh'
+      targetPath: '/opt/olcs-cli'
+
+variables:
+  buildConfiguration: 'release'
+  artifactName: 'olcs-cli-artifact'
+
+steps:
+
+  # 1. Checkout source code
+  - task: Checkout@1
+
+  # 2. Install Rust
+  - script: |
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      source $HOME/.cargo/env
+      rustup update
+    displayName: 'Install Rust'
+
+  # 3. Build the CLI in release mode
+  - script: |
+      source $HOME/.cargo/env
+      cargo build --release
+    displayName: 'Build CLI'
+
+  # 4. Prepare artifact folder
+  - script: |
+      mkdir -p $(Build.ArtifactStagingDirectory)/olcs-cli
+      cp target/release/olcs-cli $(Build.ArtifactStagingDirectory)/olcs-cli/
+      cp commands.yaml $(Build.ArtifactStagingDirectory)/olcs-cli/
+      cp subscriptions.yaml $(Build.ArtifactStagingDirectory)/olcs-cli/
+    displayName: 'Copy binary, commands.yaml, and config.yaml to artifact folder'
+
+  # 5. Publish artifact
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)/olcs-cli'
+      artifact: '$(artifactName)'
+      publishLocation: 'pipeline'
+
+  # 6. Download artifact for deployment
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      artifact: '$(artifactName)'
+      path: '$(Pipeline.Workspace)/olcs-cli'
+    displayName: 'Download artifact'
+
+  # 7. Backup existing commands.yaml if it exists
+  - ${{ each vm in parameters.targetVMs }}:
+      - task: SSH@0
+        inputs:
+          sshEndpoint: ${{ vm.sshServiceConnection }}
+          runOptions: 'commands'
+          commands: |
+            if [ -f ${{ vm.targetPath }}/commands.yaml ]; then
+              timestamp=$(date +%Y%m%d%H%M%S)
+              cp ${{ vm.targetPath }}/commands.yaml ${{ vm.targetPath }}/commands.yaml.bak.$timestamp
+              echo "Existing commands.yaml backed up as commands.yaml.bak.$timestamp"
+            fi
+        displayName: 'Backup existing commands.yaml on ${{ vm.name }}'
+
+  # 8. Deploy the artifact (binary + commands.yaml)
+  - ${{ each vm in parameters.targetVMs }}:
+      - task: CopyFilesOverSSH@0
+        inputs:
+          sshEndpoint: ${{ vm.sshServiceConnection }}
+          sourceFolder: '$(Pipeline.Workspace)/olcs-cli'
+          contents: '**'
+          targetFolder: ${{ vm.targetPath }}
+          cleanTargetFolder: false
+          overwrite: true
+        displayName: 'Deploy CLI artifact to ${{ vm.name }}'
+
+  # 9. Optional: set executable permissions and verify binary
+  - ${{ each vm in parameters.targetVMs }}:
+      - task: SSH@0
+        inputs:
+          sshEndpoint: ${{ vm.sshServiceConnection }}
+          runOptions: 'commands'
+          commands: |
+            chmod +x ${{ vm.targetPath }}/olcs-cli
+            ${{ vm.targetPath }}/olcs-cli --version
+        displayName: 'Set permissions and verify CLI on ${{ vm.name }}'
