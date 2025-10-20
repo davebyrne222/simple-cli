@@ -6,7 +6,7 @@ use dirs::config_dir;
 
 fn value_path(key: &str) -> PathBuf {
     let mut dir = config_dir().unwrap_or_default();
-    dir.push("olcs-cli");
+    dir.push("simple-cli");
     let _ = fs::create_dir_all(&dir);
     dir.push(format!("{}.txt", key));
     dir
@@ -28,7 +28,7 @@ pub fn load_last_value(key: &str) -> Option<String> {
 /** Remove all stored app data (e.g., last-used values). */
 pub fn clear_saved_data() -> std::io::Result<()> {
     let mut dir = config_dir().unwrap_or_default();
-    dir.push("olcs-cli");
+    dir.push("simple-cli");
     if dir.exists() {
         fs::remove_dir_all(&dir)?;
     }

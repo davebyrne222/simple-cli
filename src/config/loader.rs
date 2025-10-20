@@ -7,14 +7,12 @@ use dirs::data_dir;
 
 /** Load default values from config.yaml */
 pub fn load_defaults() -> Result<Option<GlobalDefaults>, YamlError> {
-    // parse_file_to_struct("params.yaml", Some(String::from("defaults")))
     let commands_path = get_candidate_file_path("params.yaml")?;
     parse_yaml_file_to_struct(&commands_path, Some(String::from("defaults")))
 }
 
 /** Load subscriptions from config.yaml */
 pub fn load_groups() -> Result<HashMap<String, UserParams>, YamlError> {
-    // parse_file_to_struct("params.yaml", Some(String::from("groups")))
     let commands_path = get_candidate_file_path("params.yaml")?;
     parse_yaml_file_to_struct(&commands_path, Some(String::from("groups")))
 }
@@ -25,10 +23,29 @@ pub fn load_commands() -> Result<Vec<Category>, YamlError> {
     let commands_path = get_candidate_file_path("commands.yaml")?;
     let mut commands: Vec<Category> = parse_yaml_file_to_struct(&commands_path, None)?;
 
-    // Try loading the local overrides (optional)
-    if let Ok(local_path) = get_candidate_file_path("commands.local.yaml") {
+    // Determine path for user-defined commands (local overrides)
+    let local_path = if let Ok(env_path) = std::env::var("SIMPLE_CLI_COMMANDS_FILE") {
+        let env_path_buf = PathBuf::from(env_path);
+        if env_path_buf.exists() {
+            Some(env_path_buf)
+        } else {
+            eprintln!(
+                "Warning: SIMPLE_CLI_COMMANDS_FILE points to a non-existent file: {:?}",
+                env_path_buf
+            );
+            None
+        }
+    } else {
+        // Fall back to searching standard locations
+        get_candidate_file_path("simple-cli.yaml").ok()
+    };
+
+    // Load and merge if we found a local override file
+    if let Some(local_path) = local_path {
         if let Ok(local_commands) = parse_yaml_file_to_struct::<Vec<Category>>(&local_path, None) {
             merge_categories(&mut commands, local_commands);
+        } else {
+            eprintln!("Warning: Failed to parse local commands from {:?}", local_path);
         }
     }
 
@@ -39,20 +56,25 @@ pub fn load_commands() -> Result<Vec<Category>, YamlError> {
 fn get_candidate_file_path(file_name: &str) -> Result<PathBuf, YamlError> {
     let mut candidates: Vec<PathBuf> = Vec::new();
 
-    // 1. User data dir, e.g. ~/.local/share/olcs-cli/<file_name>
+    // User data dir, e.g. ~/.local/share/simple-cli/<file_name>
     if let Some(mut data_dir) = dirs::data_dir() {
-        data_dir.push("olcs-cli");
+        data_dir.push("simple-cli");
         candidates.push(data_dir.join(file_name));
     }
 
-    // 2. Directory of current executable
+    // Directory of executable
     if let Ok(exe_path) = env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
             candidates.push(exe_dir.join(file_name));
         }
     }
 
-    // 3. Current working directory
+    // home
+    if let Some(home_path) = dirs::home_dir() {
+        candidates.push(home_path.join(file_name));
+    }
+
+    // CWD
     candidates.push(PathBuf::from(file_name));
 
     for path in &candidates {
@@ -141,11 +163,12 @@ fn merge_commands_list(base: &mut Vec<CommandDef>, local: Vec<CommandDef>) {
 }
 
 /** Resolve the effective path to a config/params file using the same search order. */
+// TODO: merge with get_candidate_file_path()
 pub fn resolve_config_path(file_path: &str) -> Option<PathBuf> {
     let mut candidates: Vec<PathBuf> = Vec::new();
 
     if let Some(mut dd) = data_dir() {
-        dd.push("olcs-cli");
+        dd.push("simple-cli");
         candidates.push(dd.join(file_path));
     }
 

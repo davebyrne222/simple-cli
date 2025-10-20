@@ -10,14 +10,14 @@ parameters:
   targetVMs:
     - name: vm1
       sshServiceConnection: 'vm1-ssh'
-      targetPath: '/opt/olcs-cli'
+      targetPath: '/opt/simple-cli'
     - name: vm2
       sshServiceConnection: 'vm2-ssh'
-      targetPath: '/opt/olcs-cli'
+      targetPath: '/opt/simple-cli'
 
 variables:
   buildConfiguration: 'release'
-  artifactName: 'olcs-cli-artifact'
+  artifactName: 'simple-cli-artifact'
 
 steps:
 
@@ -39,16 +39,16 @@ steps:
 
   # 4. Prepare artifact folder
   - script: |
-      mkdir -p $(Build.ArtifactStagingDirectory)/olcs-cli
-      cp target/release/olcs-cli $(Build.ArtifactStagingDirectory)/olcs-cli/
-      cp commands.yaml $(Build.ArtifactStagingDirectory)/olcs-cli/
-      cp subscriptions.yaml $(Build.ArtifactStagingDirectory)/olcs-cli/
+      mkdir -p $(Build.ArtifactStagingDirectory)/simple-cli
+      cp target/release/simple-cli $(Build.ArtifactStagingDirectory)/simple-cli/
+      cp commands.yaml $(Build.ArtifactStagingDirectory)/simple-cli/
+      cp subscriptions.yaml $(Build.ArtifactStagingDirectory)/simple-cli/
     displayName: 'Copy binary, commands.yaml, and config.yaml to artifact folder'
 
   # 5. Publish artifact
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: '$(Build.ArtifactStagingDirectory)/olcs-cli'
+      targetPath: '$(Build.ArtifactStagingDirectory)/simple-cli'
       artifact: '$(artifactName)'
       publishLocation: 'pipeline'
 
@@ -56,7 +56,7 @@ steps:
   - task: DownloadPipelineArtifact@2
     inputs:
       artifact: '$(artifactName)'
-      path: '$(Pipeline.Workspace)/olcs-cli'
+      path: '$(Pipeline.Workspace)/simple-cli'
     displayName: 'Download artifact'
 
   # 7. Backup existing commands.yaml if it exists
@@ -78,7 +78,7 @@ steps:
       - task: CopyFilesOverSSH@0
         inputs:
           sshEndpoint: ${{ vm.sshServiceConnection }}
-          sourceFolder: '$(Pipeline.Workspace)/olcs-cli'
+          sourceFolder: '$(Pipeline.Workspace)/simple-cli'
           contents: '**'
           targetFolder: ${{ vm.targetPath }}
           cleanTargetFolder: false
@@ -92,6 +92,6 @@ steps:
           sshEndpoint: ${{ vm.sshServiceConnection }}
           runOptions: 'commands'
           commands: |
-            chmod +x ${{ vm.targetPath }}/olcs-cli
-            ${{ vm.targetPath }}/olcs-cli --version
+            chmod +x ${{ vm.targetPath }}/simple-cli
+            ${{ vm.targetPath }}/simple-cli --version
         displayName: 'Set permissions and verify CLI on ${{ vm.name }}'

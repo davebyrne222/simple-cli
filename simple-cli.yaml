@@ -25,13 +25,17 @@
           prompt: Enter your name
 
     # special args
-    - name: params
-      description: Some parameters can be passed in from the config file (use `olcs -s` to select which config to use)
-      exec: echo "The current subscription ID is {{ params.subscription_id }}"
+  subcategories:
+    - name: Special Args
+      commands:
 
-    - name: namespace
-      description: >
-        Using the 'i_param' (i.e. interactive_parameter) filter will cause the CLI to present options for the user to 
-        select for the namespace in interactive mode. The namespace can be overridden on the command line
-        e.g. `olcs demo.namespace --arg namespace="-n olcs"`. ** Please note that the namespace must be in quotes **
-      exec: echo "You selected the {{ "namespace" | i_param }} namespace"
+        - name: params
+          description: Some parameters can be passed in from the config file (use `olcs -s` to select which config to use)
+          exec: echo "The current subscription ID is {{ params.subscription_id }}"
+
+        - name: namespace
+          description: >
+            Using the 'i_param' (i.e. interactive_parameter) filter will cause the CLI to present options for the user to 
+            select for the namespace in interactive mode. The namespace can be overridden on the command line
+            e.g. `olcs demo.namespace --arg namespace="-n olcs"`. ** Please note that the namespace must be in quotes **
+          exec: echo "You selected the {{ "namespace" | i_param }} namespace"

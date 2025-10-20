@@ -29,7 +29,7 @@ pub fn set_last_used(key: &str, value: &str) {
 #[allow(dead_code)]
 pub fn config_data_dir() -> PathBuf {
     let mut dir = config_dir().unwrap_or_default();
-    dir.push("olcs-cli");
+    dir.push("simple-cli");
     fs::create_dir_all(&dir).ok();
     dir
 }
