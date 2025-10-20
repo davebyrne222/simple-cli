@@ -10,11 +10,11 @@ pub fn create_context(cfg: &Config) -> GlobalContext {
     let mut ctx = GlobalContext::default();
 
     if let Some(def) = &cfg.defaults {
-        ctx.current_subscription = def.subscription.clone();
+        ctx.current_group = def.group.clone();
     }
 
     // Load last used values (if present)
-    if let Some(val) = load_last_value("subscription") { ctx.current_subscription = Some(val); }
+    if let Some(val) = load_last_value("group") { ctx.current_group = Some(val); }
     if let Some(val) = load_last_value("namespace") { ctx.current_namespace = Some(val); }
     if let Some(val) = load_last_value("user") { ctx.current_user = Some(val); }
 

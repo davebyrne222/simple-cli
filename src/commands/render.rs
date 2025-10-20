@@ -1,11 +1,11 @@
 use crate::commands::filters::param_filter::ParamFilter;
-use crate::config::{CommandDef, GlobalContext, Subscription};
+use crate::config::{CommandDef, GlobalContext, UserParams};
 use std::collections::HashMap;
 use tera::{Context, Tera};
 
 pub fn render_cmd(
     cmd: &CommandDef,
-    config: &Subscription,
+    params: &UserParams,
     ctx: &GlobalContext,
     args: &HashMap<String, String>,
 ) -> Result<String, tera::Error> {
@@ -16,7 +16,8 @@ pub fn render_cmd(
     // create context
     let mut context = Context::new();
 
-    context.insert("config", config);
+    // Expose generic user params directly as `config` for templates: {{ config.<key> }}
+    context.insert("params", &params.fields);
 
     for (k, v) in args.iter() {
         context.insert(k, v);

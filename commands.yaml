@@ -26,9 +26,9 @@ categories:
             prompt: Enter your name
 
       # special args
-      - name: config
+      - name: params
         description: Some parameters can be passed in from the config file (use `olcs -s` to select which config to use)
-        exec: echo "The current subscription ID is {{ config.subscription_id }}"
+        exec: echo "The current subscription ID is {{ params.subscription_id }}"
 
       - name: namespace
         description: >
@@ -59,18 +59,18 @@ categories:
 
           - name: switch-subscription
             description: "Switch the active subscription"
-            exec: "az account set --subscription {{config.subscription_id}}"
+            exec: "az account set --subscription {{params.subscription_id}}"
 
       - name: Key Vault
         commands:
           - name: list-secrets
             description: List all secrets in Key Vault
-            exec: az keyvault secret list --vault-name {{config.key_vault}} --query \"[].id\"
+            exec: az keyvault secret list --vault-name {{params.key_vault}} --query \"[].id\"
 
           - name: get-secret-value
             description: Get the value of a secret
             pre_command: Az.KeyVault.list-secrets
-            exec: az keyvault secret show --vault-name {{config.key_vault}} --name {{secret}} --query \"value\" -o tsv
+            exec: az keyvault secret show --vault-name {{params.key_vault}} --name {{secret}} --query \"value\" -o tsv
             args:
               - name: secret
                 prompt: Enter secret name

@@ -9,7 +9,7 @@ use clap::Parser;
 use cli::Cli;
 use commands::{find_command, run_command};
 use config::{
-    create_context, load_commands, load_defaults, load_subscriptions, resolve_config_path, Config,
+    create_context, load_commands, load_defaults, load_groups, resolve_config_path, Config,
 };
 use interactive::run_interactive;
 use crate::utils::io::clear_saved_data;
@@ -25,13 +25,13 @@ fn main() {
 
     let commands = load_commands().expect("Failed to load commands from commands.yaml");
 
-    let subscriptions =
-        load_subscriptions().expect("Failed to load subscriptions from config.yaml");
+    let groups =
+        load_groups().expect("Failed to load groups from params.yaml");
 
-    // Load dynamic commands.yaml from CWD and merge local subscriptions
+    // Load dynamic commands.yaml from CWD and merge local groups
     let config = Config {
         defaults,
-        subscriptions,
+        groups,
         categories: commands,
     };
 
@@ -60,20 +60,20 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
 
     // Show config and exit
     if cli.show_config {
-        let active_subscription = global_ctx.current_subscription.as_ref().unwrap();
-        // Show the resolved path to config.yaml
-        if let Some(path) = resolve_config_path("config.yaml") {
-            println!("Config file: {}", path.display());
+        let active_group = global_ctx.current_group.as_ref().unwrap();
+        // Show the resolved path to params.yaml
+        if let Some(path) = resolve_config_path("params.yaml") {
+            println!("Params file: {}", path.display());
         } else {
-            println!("Config file: <not found>");
+            println!("Params file: <not found>");
         }
-        match serde_yaml::to_string(&config.subscriptions.get(active_subscription)) {
+        match serde_yaml::to_string(&config.groups.get(active_group)) {
             Ok(subs_yaml) => {
-                println!("{}", active_subscription);
+                println!("{}", active_group);
                 println!("  {}", subs_yaml.replace("\n", "\n  "));
             }
             Err(e) => {
-                eprintln!("Failed to serialize subscriptions to YAML: {}", e);
+                eprintln!("Failed to serialize groups to YAML: {}", e);
             }
         }
         return;
