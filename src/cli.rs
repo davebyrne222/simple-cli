@@ -14,15 +14,15 @@ pub struct Cli {
 
     /** Show config and exit */
     #[arg(long)]
-    pub show_config: bool,
+    pub show_active_params: bool,
 
     /** Clear stored data (last-used values) and exit */
     #[arg(long)]
     pub clear_stored: bool,
 
-    /** Change active subscription */
+    /** Change active param group (params.yaml) */
     #[arg(short, long)]
-    pub switch_subscription: bool,
+    pub switch_param_group: bool,
 
     /** Run in interactive mode */
     #[arg(short, long)]

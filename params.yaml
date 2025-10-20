@@ -1,8 +1,8 @@
-# config.yaml
+# params.yaml
 # Non-sensitive information only.
 defaults:
-  subscription: dev
-subscriptions:
+  group: dev
+groups:
   dev:
     subscription_id: "dev-subscription-id"
     tenant_id: "dev-tenant-id"

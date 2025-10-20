@@ -4,29 +4,29 @@ use crate::config::{CommandDef, Config, GlobalContext};
 use crate::interactive::switchers::switch_subscription;
 
 pub fn handle_switch_subscription(cfg: &Config, ctx: &mut GlobalContext) {
-    if cfg.subscriptions.is_empty() {
-        println!("No subscriptions configured.");
+    if cfg.groups.is_empty() {
+        println!("No groups configured.");
         return;
     }
 
-    let mut names: Vec<String> = cfg.subscriptions.keys().cloned().collect();
+    let mut names: Vec<String> = cfg.groups.keys().cloned().collect();
     names.sort();
 
     let default_idx = ctx
-        .current_subscription
+        .current_group
         .as_ref()
         .and_then(|cur| names.iter().position(|n| n == cur))
         .unwrap_or(0);
 
     if let Ok(choice) = Select::new()
-        .with_prompt("Choose subscription")
+        .with_prompt("Choose group")
         .items(&names)
         .default(default_idx)
         .interact()
     {
         let selected = &names[choice];
         switch_subscription(ctx, selected);
-        println!("Switched subscription to {}", selected);
+        println!("Switched group to {}", selected);
     }
 }
 

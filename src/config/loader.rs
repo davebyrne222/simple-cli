@@ -2,12 +2,12 @@ use std::{collections::HashMap, fs, path::PathBuf, env};
 use serde::de::{DeserializeOwned, Error};
 use serde_yaml::Error as YamlError;
 use crate::config::Category;
-use super::models::{GlobalDefaults, Subscription};
+use super::models::{GlobalDefaults, UserParams};
 use dirs::data_dir;
 
 /** Load default values from config.yaml */
 pub fn load_defaults() -> Result<Option<GlobalDefaults>, YamlError> {
-    parse_file_to_struct("config.yaml", "defaults")
+    parse_file_to_struct("params.yaml", "defaults")
 }
 
 /** Load categories from commands.yaml */
@@ -16,8 +16,8 @@ pub fn load_commands() -> Result<Vec<Category>, YamlError>{
 }
 
 /** Load subscriptions from config.yaml */
-pub fn load_subscriptions() -> Result<HashMap<String, Subscription>, YamlError> {
-    parse_file_to_struct("config.yaml", "subscriptions")
+pub fn load_groups() -> Result<HashMap<String, UserParams>, YamlError> {
+    parse_file_to_struct("params.yaml", "groups")
 }
 
 /** Extract and parse yaml section to struct */
@@ -76,7 +76,7 @@ fn parse_file_to_struct<T: DeserializeOwned>(file_path: &str, section: &str) -> 
     }
 }
 
-/** Resolve the effective path to a config file using the same search order. */
+/** Resolve the effective path to a config/params file using the same search order. */
 pub fn resolve_config_path(file_path: &str) -> Option<PathBuf> {
     let mut candidates: Vec<PathBuf> = Vec::new();
 
@@ -93,5 +93,15 @@ pub fn resolve_config_path(file_path: &str) -> Option<PathBuf> {
 
     candidates.push(PathBuf::from(file_path));
 
-    candidates.into_iter().find(|p| p.exists())
+    for p in candidates {
+        if p.exists() {
+            // Prefer absolute (canonical) path; fall back to the found path on error.
+            if let Ok(abs) = fs::canonicalize(&p) {
+                return Some(abs);
+            } else {
+                return Some(p);
+            }
+        }
+    }
+    None
 }
