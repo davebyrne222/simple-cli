@@ -1,5 +1,6 @@
 # team-cli — YAML‑driven Command Runner
-![version 0.1.0](https://img.shields.io/badge/version-1.0.0-blue)
+![version 0.1.0](https://img.shields.io/badge/status-wip-yellow)
+![Version](https://img.shields.io/github/v/tag/davebyrne222/team-cli?label=latest%20version&color=blue)
 
 `team-cli` is a lightweight, YAML-driven CLI that lets you define repeatable command workflows in a single `commands.yaml` and
 run them either directly or via an interactive menu. It’s designed to streamline everyday operations tasks such as
