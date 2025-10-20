@@ -1,9 +1,9 @@
 # simple-cli — YAML‑driven Command Runner
-![version 0.1.0](https://img.shields.io/badge/status-wip-yellow)
+![Status](https://img.shields.io/badge/status-wip-yellow)
 ![Version](https://img.shields.io/github/v/tag/davebyrne222/simple-cli?label=latest%20version&color=blue)
 
-`simple-cli` is a lightweight, YAML-driven CLI that lets you define repeatable command workflows in a single `commands.yaml` and
-run them either directly or via an interactive menu. It’s designed to streamline everyday operations tasks such as
+`simple-cli` is a lightweight, YAML-driven CLI that lets you define repeatable command workflows in a single `yaml` file
+and run them either directly or via an interactive menu. It’s designed to streamline everyday operations tasks such as
 invoking cloud CLIs, Kubernetes commands, or custom scripts—consistently and safely.
 
 Key capabilities:
@@ -25,13 +25,13 @@ Key capabilities:
 
 1) Run in interactive mode:
 
-- `olcs -i`
+- `scli -i`
 - Browse categories, pick a command, and fill in prompts as needed.
 
 1) Run a command directly:
 
-- `olcs demo.basic`
-- With arguments: `olcs demo.args --arg name=Dave` (if supported by the command)
+- `scli demo.basic`
+- With arguments: `scli demo.args --arg name=Dave` (if supported by the command)
 
 Tip: If an argument value includes spaces or special characters, wrap it in quotes.
 
@@ -59,27 +59,27 @@ Templating:
 Examples you can try (from a typical catalog):
 
 - Demo:
-    - `olcs demo.basic` → prints a greeting.
-    - `olcs demo.args --arg name=Dave` → passes an argument.
-    - `olcs -i` → find “Demo > interactive” to see interactive prompting.
-    - `olcs demo.config` → shows using a value from configuration, e.g. `{{ config.subscription_id }}`.
-    - `olcs demo.namespace --namespace="olcs"` → demonstrates selecting/overriding a parameter.
+    - `scli demo.basic` → prints a greeting.
+    - `scli demo.args --arg name=Dave` → passes an argument.
+    - `scli -i` → find “Demo > interactive” to see interactive prompting.
+    - `scli demo.config` → shows using a value from configuration, e.g. `{{ config.subscription_id }}`.
+    - `scli demo.namespace --namespace="scli"` → demonstrates selecting/overriding a parameter.
 - Azure:
-    - `olcs az.subscription.login`
-    - `olcs az.subscription.list-subscriptions`
-    - `olcs az.key-vault.list-secrets`
+    - `scli az.subscription.login`
+    - `scli az.subscription.list-subscriptions`
+    - `scli az.key-vault.list-secrets`
 - Kubernetes:
-    - `olcs kubernetes.config.view-config`
-    - `olcs kubernetes.context.switch-context`
-    - `olcs kubernetes.pods.list-pods --arg namespace=olcs`
-    - `olcs kubernetes.pods.pod-logs` (will prompt you to pick a pod)
-    - `olcs kubernetes.deployments.scale-deployment`
-    - `olcs kubernetes.secrets.list-secrets`
+    - `scli kubernetes.config.view-config`
+    - `scli kubernetes.context.switch-context`
+    - `scli kubernetes.pods.list-pods --arg namespace=scli`
+    - `scli kubernetes.pods.pod-logs` (will prompt you to pick a pod)
+    - `scli kubernetes.deployments.scale-deployment`
+    - `scli kubernetes.secrets.list-secrets`
 - Config management:
-    - `olcs config.pull-latest-config` → fetch a fresh `commands.yaml` from Azure DevOps.
+    - `scli config.pull-latest-config` → fetch a fresh `commands.yaml` from Azure DevOps.
 
 Note: The concrete command paths in your CLI depend on how categories/subcategories are named in your `commands.yaml` (
-e.g., `Demo.basic` can be invoked as `olcs demo.basic`).
+e.g., `Demo.basic` can be invoked as `scli demo.basic`).
 
 ---
 
@@ -90,10 +90,10 @@ Build from source:
 1) Install Rust (stable) and Cargo.
 2) From the project root:
     - `cargo build --release`
-3) The compiled binary will be in `target/release/olcs`. Put it on your PATH or run it directly:
-    - `./target/release/olcs -i`
+3) The compiled binary will be in `target/release/scli`. Put it on your PATH or run it directly:
+    - `./target/release/scli -i`
 
-Alternatively, if you package or distribute binaries in your environment, place the binary on your PATH and run `olcs`.
+Alternatively, if you package or distribute binaries in your environment, place the binary on your PATH and run `scli`.
 
 ### Tool dependencies
 Your `exec` entries can call any tool available in your shell. For common examples:
@@ -106,7 +106,7 @@ Ensure these tools are installed and on your PATH when running commands that ref
 
 
 ### Customizing the CLI name
-By default, the cli is called using 'olcs' however, you can call the CLI whatever you want by setting the binary’s name
+By default, the cli is called using 'scli' however, you can call the CLI whatever you want by setting the binary’s name
 in the `Cargo.toml` file.
 
 ---
@@ -130,7 +130,7 @@ local file.
 - Test directly then codify:
     - First run a command in your shell, then copy it into `exec` and parameterize with `{{ ... }}`.
 - Start interactive:
-    - If you’re unsure about argument names or defaults, try `olcs -i`.
+    - If you’re unsure about argument names or defaults, try `scli -i`.
 
 ---
 

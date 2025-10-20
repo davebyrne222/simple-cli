@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [[bin]]
-name = "olcs"
+name = "scli"
 path = "src/main.rs"
 
 [dependencies]
@@ -14,7 +14,5 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_yaml = "0.9.34"
 tera = "1.20.0"
 dirs = "6.0.0"
-regex = "1.11.3"
 serde_json = "1.0.145"
-anyhow = "1.0.100"
 colored = "2.1"
