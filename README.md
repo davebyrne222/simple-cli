@@ -1,8 +1,8 @@
-# team-cli — YAML‑driven Command Runner
+# simple-cli — YAML‑driven Command Runner
 ![version 0.1.0](https://img.shields.io/badge/status-wip-yellow)
-![Version](https://img.shields.io/github/v/tag/davebyrne222/team-cli?label=latest%20version&color=blue)
+![Version](https://img.shields.io/github/v/tag/davebyrne222/simple-cli?label=latest%20version&color=blue)
 
-`team-cli` is a lightweight, YAML-driven CLI that lets you define repeatable command workflows in a single `commands.yaml` and
+`simple-cli` is a lightweight, YAML-driven CLI that lets you define repeatable command workflows in a single `commands.yaml` and
 run them either directly or via an interactive menu. It’s designed to streamline everyday operations tasks such as
 invoking cloud CLIs, Kubernetes commands, or custom scripts—consistently and safely.
 
@@ -31,9 +31,7 @@ Key capabilities:
 1) Run a command directly:
 
 - `olcs demo.basic`
-- With arguments: `olcs demo.args --arg name=Dave`
-- Some commands accept direct flags for specific args, for example:
-    - `olcs demo.namespace --arg namespace=olcs`
+- With arguments: `olcs demo.args --arg name=Dave` (if supported by the command)
 
 Tip: If an argument value includes spaces or special characters, wrap it in quotes.
 
