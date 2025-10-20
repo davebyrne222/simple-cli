@@ -93,5 +93,15 @@ pub fn resolve_config_path(file_path: &str) -> Option<PathBuf> {
 
     candidates.push(PathBuf::from(file_path));
 
-    candidates.into_iter().find(|p| p.exists())
+    for p in candidates {
+        if p.exists() {
+            // Prefer absolute (canonical) path; fall back to the found path on error.
+            if let Ok(abs) = fs::canonicalize(&p) {
+                return Some(abs);
+            } else {
+                return Some(p);
+            }
+        }
+    }
+    None
 }

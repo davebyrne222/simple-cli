@@ -59,7 +59,7 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
     }
 
     // Show config and exit
-    if cli.show_params {
+    if cli.show_active_params {
         let active_group = global_ctx.current_group.as_ref().unwrap();
         // Show the resolved path to params.yaml
         if let Some(path) = resolve_config_path("params.yaml") {
@@ -69,8 +69,8 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
         }
         match serde_yaml::to_string(&config.groups.get(active_group)) {
             Ok(subs_yaml) => {
-                println!("{}", active_group);
-                println!("  {}", subs_yaml.replace("\n", "\n  "));
+                println!("Active group: {}", active_group);
+                println!("Params:\n  {}", subs_yaml.replace("\n", "\n  "));
             }
             Err(e) => {
                 eprintln!("Failed to serialize groups to YAML: {}", e);

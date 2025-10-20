@@ -14,7 +14,7 @@ pub struct Cli {
 
     /** Show config and exit */
     #[arg(long)]
-    pub show_params: bool,
+    pub show_active_params: bool,
 
     /** Clear stored data (last-used values) and exit */
     #[arg(long)]
