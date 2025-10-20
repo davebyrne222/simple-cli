@@ -24,7 +24,7 @@
         - name: name
           prompt: Enter your name
 
-    # special args
+  # special args
   subcategories:
     - name: Special Args
       commands:

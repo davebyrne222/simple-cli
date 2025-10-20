@@ -3,7 +3,6 @@ use serde::de::{DeserializeOwned, Error};
 use serde_yaml::{Error as YamlError, Value};
 use crate::config::{Category, CommandDef, SubCategory};
 use super::models::{GlobalDefaults, UserParams};
-use dirs::data_dir;
 
 /** Load default values from config.yaml */
 pub fn load_defaults() -> Result<Option<GlobalDefaults>, YamlError> {
@@ -53,7 +52,7 @@ pub fn load_commands() -> Result<Vec<Category>, YamlError> {
 }
 
 /// Finds the best candidate file path (tries data_dir, exe dir, cwd)
-fn get_candidate_file_path(file_name: &str) -> Result<PathBuf, YamlError> {
+pub fn get_candidate_file_path(file_name: &str) -> Result<PathBuf, YamlError> {
     let mut candidates: Vec<PathBuf> = Vec::new();
 
     // User data dir, e.g. ~/.local/share/simple-cli/<file_name>
@@ -77,9 +76,14 @@ fn get_candidate_file_path(file_name: &str) -> Result<PathBuf, YamlError> {
     // CWD
     candidates.push(PathBuf::from(file_name));
 
+    // search for file
     for path in &candidates {
         if path.exists() {
-            return Ok(path.clone());
+            if let Ok(abs) = fs::canonicalize(&path) {
+                return Ok(abs);
+            } else {
+                return Ok(path.clone());
+            }
         }
     }
 
@@ -160,35 +164,4 @@ fn merge_commands_list(base: &mut Vec<CommandDef>, local: Vec<CommandDef>) {
             base.push(local_cmd);
         }
     }
-}
-
-/** Resolve the effective path to a config/params file using the same search order. */
-// TODO: merge with get_candidate_file_path()
-pub fn resolve_config_path(file_path: &str) -> Option<PathBuf> {
-    let mut candidates: Vec<PathBuf> = Vec::new();
-
-    if let Some(mut dd) = data_dir() {
-        dd.push("simple-cli");
-        candidates.push(dd.join(file_path));
-    }
-
-    if let Ok(exe_path) = env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
-            candidates.push(exe_dir.join(file_path));
-        }
-    }
-
-    candidates.push(PathBuf::from(file_path));
-
-    for p in candidates {
-        if p.exists() {
-            // Prefer absolute (canonical) path; fall back to the found path on error.
-            if let Ok(abs) = fs::canonicalize(&p) {
-                return Some(abs);
-            } else {
-                return Some(p);
-            }
-        }
-    }
-    None
 }

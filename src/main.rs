@@ -9,7 +9,7 @@ use clap::Parser;
 use cli::Cli;
 use commands::{find_command, run_command};
 use config::{
-    create_context, load_commands, load_defaults, load_groups, resolve_config_path, Config,
+    create_context, load_commands, load_defaults, load_groups, get_candidate_file_path, Config,
 };
 use interactive::run_interactive;
 use crate::utils::io::clear_saved_data;
@@ -61,12 +61,17 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
     // Show config and exit
     if cli.show_active_params {
         let active_group = global_ctx.current_group.as_ref().unwrap();
-        // Show the resolved path to params.yaml
-        if let Some(path) = resolve_config_path("params.yaml") {
-            println!("Params file: {}", path.display());
-        } else {
-            println!("Params file: <not found>");
-        }
+
+        let path = match get_candidate_file_path("params.yaml") {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("Failed to load commands: {}", e);
+                return; // or continue with defaults
+            }
+        };
+
+        println!("Params file: {}", path.display());
+
         match serde_yaml::to_string(&config.groups.get(active_group)) {
             Ok(subs_yaml) => {
                 println!("Active group: {}", active_group);
