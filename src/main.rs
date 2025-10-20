@@ -59,7 +59,7 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
     }
 
     // Show config and exit
-    if cli.show_config {
+    if cli.show_params {
         let active_group = global_ctx.current_group.as_ref().unwrap();
         // Show the resolved path to params.yaml
         if let Some(path) = resolve_config_path("params.yaml") {
@@ -80,7 +80,7 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
     }
 
     // Switch subscription
-    if cli.switch_subscription {
+    if cli.switch_param_group {
         handle_switch_subscription(config, &mut global_ctx);
         return;
     }

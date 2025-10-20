@@ -1,17 +1,14 @@
 use std::collections::HashMap;
 use tera::{Value, Filter, Result as TeraResult, Error};
-use crate::config::GlobalContext;
 use crate::commands::kubernetes::namespace::get_user_namespace_choice;
 
 pub struct ParamFilter {
-    ctx: GlobalContext,
     arg_overrides: HashMap<String, String>,
 }
 
 impl ParamFilter {
-    pub fn new(ctx: &GlobalContext, args: &HashMap<String, String>) -> Self {
+    pub fn new(args: &HashMap<String, String>) -> Self {
         Self {
-            ctx: ctx.clone(),
             arg_overrides: args.clone(),
         }
     }

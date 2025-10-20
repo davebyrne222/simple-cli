@@ -17,7 +17,7 @@ pub fn run_command(
     let current_config: &UserParams = cfg.groups.get(sub_name)
         .ok_or_else(|| format!("Group '{}' not found", sub_name))?;
 
-    let rendered = render_cmd(cmd, current_config, ctx, args)
+    let rendered = render_cmd(cmd, current_config, args)
         .map_err(|e| format!("Failed to render: {}", format_error_chain(&e)))?;
 
     // Colored, minimal shell-like prefix: `$ command`

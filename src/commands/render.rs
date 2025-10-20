@@ -1,17 +1,16 @@
 use crate::commands::filters::param_filter::ParamFilter;
-use crate::config::{CommandDef, GlobalContext, UserParams};
+use crate::config::{CommandDef, UserParams};
 use std::collections::HashMap;
 use tera::{Context, Tera};
 
 pub fn render_cmd(
     cmd: &CommandDef,
     params: &UserParams,
-    ctx: &GlobalContext,
     args: &HashMap<String, String>,
 ) -> Result<String, tera::Error> {
     let mut tera = Tera::default();
     tera.add_raw_template("cmd", cmd.exec.as_str())?;
-    tera.register_filter("i_param", ParamFilter::new(ctx, args));
+    tera.register_filter("i_param", ParamFilter::new(args));
 
     // create context
     let mut context = Context::new();
