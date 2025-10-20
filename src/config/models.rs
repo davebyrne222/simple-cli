@@ -35,7 +35,9 @@ pub struct UserParams {
 /** Top-level category grouping commands */
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Category {
-    pub name: String,
+    pub category: String,
+    #[serde(default)]
+    pub description: String,
     #[serde(default)]
     pub commands: Vec<CommandDef>,
     #[serde(default)]
@@ -46,6 +48,8 @@ pub struct Category {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SubCategory {
     pub name: String,
+    #[serde(default)]
+    pub description: String,
     #[serde(default)]
     pub commands: Vec<CommandDef>,
 }

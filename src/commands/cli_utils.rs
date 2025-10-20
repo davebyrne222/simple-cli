@@ -187,9 +187,9 @@ NAME/DESCRIPTION/ARGS table format as interactive mode.
 */
 pub fn list_commands(cfg: &Config) {
     for cat in &cfg.categories {
-        println!("\n{}", cat.name.bold().on_blue());
+        println!("\n{}", cat.category.bold().on_blue());
 
-        let cat_prefix = normalize_name(&cat.name);
+        let cat_prefix = normalize_name(&cat.category);
         if !cat.commands.is_empty() {
             for line in render_table(&cat.commands, &cat_prefix) {
                 println!("  {}", line);
