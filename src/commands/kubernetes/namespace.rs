@@ -2,9 +2,8 @@ use std::process::Command;
 use dialoguer::Select;
 use dialoguer::theme::ColorfulTheme;
 use serde_json::Value;
-use crate::config::GlobalContext;
 
-pub fn get_user_namespace_choice(ctx: &GlobalContext) -> Result<String, String> {
+pub fn get_user_namespace_choice() -> Result<String, String> {
 
     // get namespaces
     let output = Command::new("kubectl")
@@ -34,14 +33,8 @@ pub fn get_user_namespace_choice(ctx: &GlobalContext) -> Result<String, String> 
         eprintln!("No namespaces found.");
     }
 
-    // get user selection
-    let _current_namespace = ctx.current_namespace.clone().unwrap_or_else(|| {
-        eprintln!("No current namespace set.");
-        "".to_string()
-    });
-
-    namespaces.insert(0, "context".to_string() );
-    // namespaces.insert(1, format!("current ({})", current_namespace));
+    // Build selection list
+    namespaces.insert(0, "context".to_string());
     namespaces.insert(1, "all".to_string());
 
     let selection = Select::with_theme(&ColorfulTheme::default())
@@ -53,10 +46,13 @@ pub fn get_user_namespace_choice(ctx: &GlobalContext) -> Result<String, String> 
 
     let namespace_arg = match selection {
         0 => "".to_string(),
-        // 1 => format!("-n {}", current_namespace),
         1 => "--all-namespaces".to_string(),
-        n => format!("-n {}", namespaces.get(n)
-            .ok_or_else(|| format!("Invalid selection: {}", n))?),
+        n => format!(
+            "-n {}",
+            namespaces
+                .get(n)
+                .ok_or_else(|| format!("Invalid selection: {}", n))?
+        ),
     };
 
     Ok(namespace_arg)

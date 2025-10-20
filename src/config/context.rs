@@ -15,8 +15,6 @@ pub fn create_context(cfg: &Config) -> GlobalContext {
 
     // Load last used values (if present)
     if let Some(val) = load_last_value("group") { ctx.current_group = Some(val); }
-    if let Some(val) = load_last_value("namespace") { ctx.current_namespace = Some(val); }
-    if let Some(val) = load_last_value("user") { ctx.current_user = Some(val); }
 
     ctx
 }

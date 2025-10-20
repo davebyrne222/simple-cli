@@ -27,7 +27,7 @@ impl Filter for ParamFilter {
         // Else use context
         match tera::try_get_value!("param", "value", String, value).as_str() {
             "namespace" => {
-                let ns_arg = get_user_namespace_choice(&self.ctx)
+                let ns_arg = get_user_namespace_choice()
                     .map_err(|e| Error::msg(e))?;
                 Ok(Value::from(ns_arg))
             },

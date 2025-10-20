@@ -22,8 +22,6 @@ Runtime global context used across modules.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct GlobalContext {
     pub current_group: Option<String>,
-    pub current_namespace: Option<String>,
-    pub current_user: Option<String>,
 }
 
 /** User parameters with arbitrary key-value pairs (from config.yaml subscriptions).
