@@ -66,7 +66,7 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
             Ok(s) => s,
             Err(e) => {
                 eprintln!("Failed to load commands: {}", e);
-                return; // or continue with defaults
+                return;
             }
         };
 
