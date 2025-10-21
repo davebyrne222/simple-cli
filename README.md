@@ -1,37 +1,38 @@
-# simple-cli — YAML‑driven Command Runner
+<div align="center">
+
+<img src="docs/images/Logo.png" width="250" />
+
+# Simple-Cli — YAML‑driven Command Runner
 ![Status](https://img.shields.io/badge/status-wip-yellow)
 ![Version](https://img.shields.io/github/v/tag/davebyrne222/simple-cli?label=latest%20version&color=blue)
 
-`simple-cli` is a lightweight, YAML-driven CLI that lets you define repeatable command workflows in a single `yaml` file
-and run them either directly or via an interactive menu. It’s designed to streamline everyday operations tasks such as
-invoking cloud CLIs, Kubernetes commands, or custom scripts—consistently and safely.
+A configurable, YAML-driven, command runner CLI - define repeatable command workflows with parameter substitution
+and run them in your terminal.
+
+</div>
 
 Key capabilities:
 
 - Human-friendly command catalog in YAML: categories, subcategories, and commands.
 - Interactive mode with a navigable menu and prompts for arguments.
 - Powerful templating for command substitution and composition.
-- Optional pre-commands to chain or prepare context.
 - Works with your existing tooling (e.g., `az`, `kubectl`, `jq`) by orchestrating shell commands you already use.
 
 ---
 
 ## Quick Start
 
-1) Ensure you have:
+1. Ensure you have:
+   - A working shell environment with any tools your commands will call (e.g., Azure CLI `az`, `kubectl`, `jq`).
+   - A `commands.yaml` file in your working directory (see examples below).
 
-- A working shell environment with any tools your commands will call (e.g., Azure CLI `az`, `kubectl`, `jq`).
-- A `commands.yaml` file in your working directory (see examples below).
+1. Run in interactive mode:
+   - `scli -i`
+   - Browse categories, pick a command, and fill in prompts as needed.
 
-1) Run in interactive mode:
-
-- `scli -i`
-- Browse categories, pick a command, and fill in prompts as needed.
-
-1) Run a command directly:
-
-- `scli demo.basic`
-- With arguments: `scli demo.args --arg name=Dave` (if supported by the command)
+1. Run a command directly:
+   - `scli demo.basic`
+   - With arguments: `scli demo.args --arg name=Dave` (if supported by the command)
 
 Tip: If an argument value includes spaces or special characters, wrap it in quotes.
 
@@ -106,7 +107,7 @@ Ensure these tools are installed and on your PATH when running commands that ref
 
 
 ### Customizing the CLI name
-By default, the cli is called using 'scli' however, you can call the CLI whatever you want by setting the binary’s name
+By default, the cli is called using `scli` however, you can call the CLI whatever you want by setting the binary’s name
 in the `Cargo.toml` file.
 
 ---
