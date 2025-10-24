@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="docs/images/Logo.png" width="250" />
+<img src="docs/images/Logo2.png" width="250" />
 
-# Simple-Cli — YAML‑driven Command Runner
+# SimpleCli — YAML‑driven Command Runner
 ![Status](https://img.shields.io/badge/status-wip-yellow)
-![Version](https://img.shields.io/github/v/tag/davebyrne222/simple-cli?label=latest%20version&color=blue)
+![Version](https://img.shields.io/github/v/tag/davebyrne222/SimpleCli?label=latest%20version&color=blue)
 
 A configurable, YAML-driven, command runner CLI - define repeatable command workflows with parameter substitution
 and run them in your terminal.
