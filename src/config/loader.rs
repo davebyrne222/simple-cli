@@ -1,127 +1,181 @@
-use std::{collections::HashMap, fs, path::PathBuf, env};
-use serde::de::{DeserializeOwned, Error};
-use serde_yaml::{Error as YamlError, Value};
+use std::{collections::HashMap, fs, path::{Path, PathBuf}, env};
+use serde::de::DeserializeOwned;
+use serde_yaml::Value;
 use super::models::{ConfigFile, Config};
-use log::{debug, warn, error};
+use log::{debug, info, warn, error};
+use thiserror::Error;
 
-pub fn load_config() -> Result<Config, YamlError> {
+/// Error type for configuration loading
+#[derive(Debug, Error)]
+pub enum ConfigLoadError {
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("YAML parse error: {0}")]
+    Yaml(#[from] serde_yaml::Error),
+
+    #[error("Requested section '{0}' is missing in {1:?}")]
+    MissingSection(String, PathBuf),
+
+    #[error("Config file key missing: {0}")]
+    MissingConfigKey(String),
+
+    #[error("Could not find all config files in any candidate directory:\n{0}")]
+    MissingConfigFiles(String),
+}
+
+/// Top-level config loader
+pub fn load_config() -> Result<Config, ConfigLoadError> {
     let mut config = Config::default();
 
-    debug!("Loading config");
+    debug!("Starting config load");
+
+    // Locate directory containing all required ConfigFiles
     config.files = get_config_dir(&config.files)?;
 
+    // Get file paths
     let params_file = config.files
         .get("paramsFile")
-        .ok_or_else(|| YamlError::custom("paramsFile missing in config files"))?;
-
+        .ok_or_else(|| ConfigLoadError::MissingConfigKey("paramsFile".to_string()))?;
     let commands_file = config.files
         .get("commandsFile")
-        .ok_or_else(|| YamlError::custom("commandsFile missing in config files"))?;
+        .ok_or_else(|| ConfigLoadError::MissingConfigKey("commandsFile".to_string()))?;
 
-    debug!("Loading defaults");
-    config.defaults = parse_yaml_file_to_struct(
-        &params_file.path,
-        Some("defaults".to_string())
-    )?;
+    // Read the params file
+    debug!("Reading params file at {:?}", params_file.path);
+    let params_yaml = read_yaml_file(&params_file.path)?;
 
-    debug!("Loading params");
-    config.params = parse_yaml_file_to_struct(
-        &params_file.path,
-        Some("groups".to_string())
-    )?;
+    debug!("Loading defaults from params file");
+    config.defaults = parse_section_from_value(&params_yaml, Some("defaults"), &params_file.path)?;
 
-    debug!("Loading commands");
-    config.categories = parse_yaml_file_to_struct(
-        &commands_file.path,
-        None
-    )?;
+    debug!("Loading params/groups from params file");
+    config.params = parse_section_from_value(&params_yaml, Some("groups"), &params_file.path)?;
 
+    // Read commands file
+    debug!("Reading commands file at {:?}", commands_file.path);
+    let commands_yaml = read_yaml_file(&commands_file.path)?;
+
+    debug!("Loading commands/categories from commands file");
+    config.categories = parse_section_from_value(&commands_yaml, None, &commands_file.path)?;
+
+    info!("Configuration loaded successfully");
     Ok(config)
 }
 
-/// Finds the config files (tries env var, home dir, cwd)
-pub fn get_config_dir(files: &HashMap<String, ConfigFile>) -> Result<HashMap<String, ConfigFile>, YamlError> {
+/// Given a map of expected files (key -> ConfigFile with `filename` set),
+/// find a directory that contains *all* those files co-located.
+///
+/// Candidate search order: $SIMPLE_CLI_DIR, $HOME/SimpleCli, current working dir.
+pub fn get_config_dir(files: &HashMap<String, ConfigFile>) -> Result<HashMap<String, ConfigFile>, ConfigLoadError> {
     let mut candidates: Vec<PathBuf> = Vec::new();
 
     // Envvar
-    if let Ok(env_path) = std::env::var("SIMPLE_CLI_DIR") {
-        candidates.push(PathBuf::from(env_path));
+    if let Ok(env_path) = env::var("SIMPLE_CLI_DIR") {
+        let p = PathBuf::from(env_path);
+        debug!("Candidate from SIMPLE_CLI_DIR: {:?}", p);
+        candidates.push(p);
     } else {
         debug!("SIMPLE_CLI_DIR not set");
     }
 
     // Home
-    if let Some(home_path) = dirs::home_dir() {
-        let full_path = home_path.join("SimpleCli");
-        if full_path.exists() {
-            candidates.push(full_path);
+    if let Some(home) = dirs::home_dir() {
+        let p = home.join("SimpleCli");
+        debug!("Checking home candidate: {:?}", p);
+        if p.exists() {
+            candidates.push(p);
         } else {
-            debug!("SimpleCli directory not found at {:?}", full_path);
+            debug!("Home candidate missing: {:?}", p);
         }
     }
 
     // CWD
     match env::current_dir() {
-        Ok(cwd) => candidates.push(cwd),
+        Ok(cwd) => {
+            debug!("Using current dir candidate: {:?}", cwd);
+            candidates.push(cwd);
+        }
         Err(e) => warn!("Failed to get current working directory: {}", e),
     }
 
-    debug!("Searching for config files in candidate directories: {:?}", candidates);
+    if candidates.is_empty() {
+        return Err(ConfigLoadError::MissingConfigFiles(
+            "No candidate directories available".to_string()
+        ));
+    }
 
+    // For diagnostics: which files are missing per directory
+    let mut diagnostics: Vec<(PathBuf, Vec<String>)> = Vec::new();
+
+    // Try each candidate path
     for dir in &candidates {
-        // Clone the initial state (all ConfigFile structs with empty paths)
-        let mut required_files = files.clone();
+        let mut cloned_map = files.clone();
+        let mut missing: Vec<String> = Vec::new();
 
-        let mut all_found = true;
+        debug!("Checking candidate dir {:?}", dir);
 
-        debug!("Checking directory {:?} for config files", dir);
-        for (_name, file) in required_files.iter_mut() {
-            let full_path = dir.join(&file.filename);
+        for (_key, cfg_file) in cloned_map.iter_mut() {
+            let path = dir.join(&cfg_file.filename);
 
-            if full_path.exists() {
-                debug!("Found file '{}' at {:?}", file.filename, full_path);
-                file.path = full_path;
+            if path.exists() {
+                debug!("  {:?}: found", path);
+                cfg_file.path = path;
             } else {
-                debug!("Missing file '{}' at {:?}", file.filename, full_path);
-                all_found = false;
-                break;
+                debug!("  {:?}: missing", path);
+                missing.push(cfg_file.filename.clone());
             }
         }
 
-        if all_found {
-            debug!("All config files found in {:?}", dir);
-            return Ok(required_files);
+        if missing.is_empty() {
+            debug!("All required files found in {:?}", dir);
+            return Ok(cloned_map);
+        } else {
+            debug!("Candidate {:?} is missing files: {:?}", dir, missing);
+            diagnostics.push((dir.clone(), missing));
         }
     }
 
-    error!("Could not locate all config files co-located in any of: {:?}", candidates);
-    Err(YamlError::custom(format!(
-        "Could not locate all config files co-located in any of: {:?}",
-        candidates
-    )))
+    // Message describing missing files per candidate
+    let mut msg = String::from("Missing files per candidate directory:\n");
+    for (dir, missing) in &diagnostics {
+        msg.push_str(&format!("- {:?} missing: {:?}\n", dir, missing));
+    }
+    msg.push_str("Searched candidates: SIMPLE_CLI_DIR, $HOME/SimpleCli, current working directory.");
+
+    error!("{}", msg);
+    Err(ConfigLoadError::MissingConfigFiles(msg))
 }
 
-/// Reads a YAML file into a struct, optionally extracting a section
-fn parse_yaml_file_to_struct<T: DeserializeOwned>(
-    path: &PathBuf,
-    section: Option<String>,
-) -> Result<T, YamlError> {
-    debug!("Parsing file {:?} into {}", path, std::any::type_name::<T>());
-    let content = fs::read_to_string(path)
-        .map_err(|e| YamlError::custom(format!("Failed to read {:?}: {}", path, e)))?;
+/// Read a YAML file return a serde_yaml::Value
+fn read_yaml_file(path: &Path) -> Result<Value, ConfigLoadError> {
+    debug!("Reading YAML file {:?}", path);
+    let content = fs::read_to_string(path)?; // Io error -> ConfigLoadError::Io via From
+    let value: Value = serde_yaml::from_str(&content)?; // serde_yaml::Error -> ConfigLoadError::Yaml
+    Ok(value)
+}
 
-    let full_yaml: Value = serde_yaml::from_str(&content)
-        .map_err(|e| YamlError::custom(format!("Failed to parse {:?}: {}", path, e)))?;
-
-    if let Some(section_name) = section {
-        if let Some(section_value) = full_yaml.get(&section_name) {
-            serde_yaml::from_value(section_value.clone())
-                .map_err(|e| YamlError::custom(format!("Failed to deserialize section '{}' in {:?}: {}", section_name, path, e)))
-        } else {
-            Err(YamlError::custom(format!("Section '{}' not found in {:?}", section_name, path)))
+/// Extract a section (or deserialize the whole file if `section` is None)
+/// from a serde_yaml::Value and turn it into T.
+fn parse_section_from_value<T: DeserializeOwned>(
+    full_yaml: &Value,
+    section: Option<&str>,
+    path: &Path,
+) -> Result<T, ConfigLoadError> {
+    match section {
+        Some(name) => {
+            match full_yaml.get(name) {
+                Some(value) => {
+                    let v = value.clone();
+                    let t = serde_yaml::from_value(v)?;
+                    Ok(t)
+                }
+                None => Err(ConfigLoadError::MissingSection(name.to_string(), path.to_path_buf())),
+            }
         }
-    } else {
-        serde_yaml::from_value(full_yaml)
-            .map_err(|e| YamlError::custom(format!("Failed to deserialize file {:?}: {}", path, e)))
+        None => {
+            let v = full_yaml.clone();
+            let t = serde_yaml::from_value(v)?;
+            Ok(t)
+        }
     }
 }

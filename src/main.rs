@@ -18,9 +18,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use log::warn;
 
-/**
- Entry point: init: load config and initialize context
-*/
+/// Entry point: init: load config and initialize context
 fn main() {
     // init logger
     env_logger::init();
@@ -35,9 +33,7 @@ fn main() {
     handle_args(&config, &mut global_ctx);
 }
 
-/**
- parse CLI and dispatch to interactive or directly execute.
-*/
+/// parse CLI and dispatch to interactive or directly execute.
 fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
     //parse CLI
     let cli = Cli::parse();
