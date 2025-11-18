@@ -9,31 +9,24 @@ use clap::Parser;
 use cli::Cli;
 use commands::{find_command, run_command};
 use config::{
-    create_context, load_commands, load_defaults, load_groups, get_candidate_file_path, Config,
+    create_context, load_config, Config,
 };
 use interactive::run_interactive;
 use crate::utils::io::clear_saved_data;
 use serde_yaml;
 use std::collections::HashMap;
+use std::path::PathBuf;
+use log::warn;
 
 /**
  Entry point: init: load config and initialize context
 */
 fn main() {
-    // Load default values from config.yaml
-    let defaults = load_defaults().expect("Failed to load defaults from config.yaml");
+    // init logger
+    env_logger::init();
 
-    let commands = load_commands().expect("Failed to load commands from commands.yaml");
-
-    let groups =
-        load_groups().expect("Failed to load groups from params.yaml");
-
-    // Load dynamic commands.yaml from CWD and merge local groups
-    let config = Config {
-        defaults,
-        groups,
-        categories: commands,
-    };
+    // loqd values from files
+    let config = load_config().expect("Failed to load config");
 
     // Initialize global context
     let mut global_ctx = create_context(&config);
@@ -62,17 +55,17 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
     if cli.show_active_params {
         let active_group = global_ctx.current_group.as_ref().unwrap();
 
-        let path = match get_candidate_file_path("params.yaml") {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("Failed to load commands: {}", e);
-                return;
+        let path = match config.files.get("paramsFile") {
+            Some(file) => file.path.clone(),
+            None => {
+                warn!("paramsFile is missing in config");
+                PathBuf::from("scli.params.yaml")
             }
         };
 
         println!("Params file: {}", path.display());
 
-        match serde_yaml::to_string(&config.groups.get(active_group)) {
+        match serde_yaml::to_string(&config.params.get(active_group)) {
             Ok(subs_yaml) => {
                 println!("Active group: {}", active_group);
                 println!("Params:\n  {}", subs_yaml.replace("\n", "\n  "));

@@ -1,4 +1,4 @@
-# params.yaml
+# scli.params.yaml
 # Non-sensitive information only.
 defaults:
   group: dev

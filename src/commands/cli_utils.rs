@@ -4,12 +4,12 @@ use crate::config::{CommandDef, Config, GlobalContext};
 use crate::interactive::switchers::switch_subscription;
 
 pub fn handle_switch_subscription(cfg: &Config, ctx: &mut GlobalContext) {
-    if cfg.groups.is_empty() {
+    if cfg.params.is_empty() {
         println!("No groups configured.");
         return;
     }
 
-    let mut names: Vec<String> = cfg.groups.keys().cloned().collect();
+    let mut names: Vec<String> = cfg.params.keys().cloned().collect();
     names.sort();
 
     let default_idx = ctx

@@ -14,7 +14,7 @@ pub fn run_command(
     let sub_name = ctx.current_group.as_ref()
         .ok_or_else(|| "No group selected".to_string())?;
 
-    let current_config: &UserParams = cfg.groups.get(sub_name)
+    let current_config: &UserParams = cfg.params.get(sub_name)
         .ok_or_else(|| format!("Group '{}' not found", sub_name))?;
 
     let rendered = render_cmd(cmd, current_config, args)

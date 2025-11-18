@@ -1,95 +1,103 @@
 use std::{collections::HashMap, fs, path::PathBuf, env};
 use serde::de::{DeserializeOwned, Error};
 use serde_yaml::{Error as YamlError, Value};
-use crate::config::{Category, CommandDef, SubCategory};
-use super::models::{GlobalDefaults, UserParams};
+use super::models::{ConfigFile, Config};
+use log::{debug, warn, error};
 
-/** Load default values from config.yaml */
-pub fn load_defaults() -> Result<Option<GlobalDefaults>, YamlError> {
-    let commands_path = get_candidate_file_path("params.yaml")?;
-    parse_yaml_file_to_struct(&commands_path, Some(String::from("defaults")))
+pub fn load_config() -> Result<Config, YamlError> {
+    let mut config = Config::default();
+
+    debug!("Loading config");
+    config.files = get_config_dir(&config.files)?;
+
+    let params_file = config.files
+        .get("paramsFile")
+        .ok_or_else(|| YamlError::custom("paramsFile missing in config files"))?;
+
+    let commands_file = config.files
+        .get("commandsFile")
+        .ok_or_else(|| YamlError::custom("commandsFile missing in config files"))?;
+
+    debug!("Loading defaults");
+    config.defaults = parse_yaml_file_to_struct(
+        &params_file.path,
+        Some("defaults".to_string())
+    )?;
+
+    debug!("Loading params");
+    config.params = parse_yaml_file_to_struct(
+        &params_file.path,
+        Some("groups".to_string())
+    )?;
+
+    debug!("Loading commands");
+    config.categories = parse_yaml_file_to_struct(
+        &commands_file.path,
+        None
+    )?;
+
+    Ok(config)
 }
 
-/** Load subscriptions from config.yaml */
-pub fn load_groups() -> Result<HashMap<String, UserParams>, YamlError> {
-    let commands_path = get_candidate_file_path("params.yaml")?;
-    parse_yaml_file_to_struct(&commands_path, Some(String::from("groups")))
-}
-
-/** Load categories from commands.yaml */
-pub fn load_commands() -> Result<Vec<Category>, YamlError> {
-    // Load the base (required) commands.yaml
-    let commands_path = get_candidate_file_path("commands.yaml")?;
-    let mut commands: Vec<Category> = parse_yaml_file_to_struct(&commands_path, None)?;
-
-    // Determine path for user-defined commands (local overrides)
-    let local_path = if let Ok(env_path) = std::env::var("SIMPLE_CLI_COMMANDS_FILE") {
-        let env_path_buf = PathBuf::from(env_path);
-        if env_path_buf.exists() {
-            Some(env_path_buf)
-        } else {
-            eprintln!(
-                "Warning: SIMPLE_CLI_COMMANDS_FILE points to a non-existent file: {:?}",
-                env_path_buf
-            );
-            None
-        }
-    } else {
-        // Fall back to searching standard locations
-        get_candidate_file_path("simple-cli.yaml").ok()
-    };
-
-    // Load and merge if we found a local override file
-    if let Some(local_path) = local_path {
-        if let Ok(local_commands) = parse_yaml_file_to_struct::<Vec<Category>>(&local_path, None) {
-            merge_categories(&mut commands, local_commands);
-        } else {
-            eprintln!("Warning: Failed to parse local commands from {:?}", local_path);
-        }
-    }
-
-    Ok(commands)
-}
-
-/// Finds the best candidate file path (tries data_dir, exe dir, cwd)
-pub fn get_candidate_file_path(file_name: &str) -> Result<PathBuf, YamlError> {
+/// Finds the config files (tries env var, home dir, cwd)
+pub fn get_config_dir(files: &HashMap<String, ConfigFile>) -> Result<HashMap<String, ConfigFile>, YamlError> {
     let mut candidates: Vec<PathBuf> = Vec::new();
 
-    // User data dir, e.g. ~/.local/share/simple-cli/<file_name>
-    if let Some(mut data_dir) = dirs::data_dir() {
-        data_dir.push("simple-cli");
-        candidates.push(data_dir.join(file_name));
+    // Envvar
+    if let Ok(env_path) = std::env::var("SIMPLE_CLI_DIR") {
+        candidates.push(PathBuf::from(env_path));
+    } else {
+        debug!("SIMPLE_CLI_DIR not set");
     }
 
-    // Directory of executable
-    if let Ok(exe_path) = env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
-            candidates.push(exe_dir.join(file_name));
-        }
-    }
-
-    // home
+    // Home
     if let Some(home_path) = dirs::home_dir() {
-        candidates.push(home_path.join(file_name));
+        let full_path = home_path.join("SimpleCli");
+        if full_path.exists() {
+            candidates.push(full_path);
+        } else {
+            debug!("SimpleCli directory not found at {:?}", full_path);
+        }
     }
 
     // CWD
-    candidates.push(PathBuf::from(file_name));
+    match env::current_dir() {
+        Ok(cwd) => candidates.push(cwd),
+        Err(e) => warn!("Failed to get current working directory: {}", e),
+    }
 
-    // search for file
-    for path in &candidates {
-        if path.exists() {
-            if let Ok(abs) = fs::canonicalize(&path) {
-                return Ok(abs);
+    debug!("Searching for config files in candidate directories: {:?}", candidates);
+
+    for dir in &candidates {
+        // Clone the initial state (all ConfigFile structs with empty paths)
+        let mut required_files = files.clone();
+
+        let mut all_found = true;
+
+        debug!("Checking directory {:?} for config files", dir);
+        for (_name, file) in required_files.iter_mut() {
+            let full_path = dir.join(&file.filename);
+
+            if full_path.exists() {
+                debug!("Found file '{}' at {:?}", file.filename, full_path);
+                file.path = full_path;
             } else {
-                return Ok(path.clone());
+                debug!("Missing file '{}' at {:?}", file.filename, full_path);
+                all_found = false;
+                break;
             }
+        }
+
+        if all_found {
+            debug!("All config files found in {:?}", dir);
+            return Ok(required_files);
         }
     }
 
+    error!("Could not locate all config files co-located in any of: {:?}", candidates);
     Err(YamlError::custom(format!(
-        "Could not locate file {} in any of: {:?}",
-        file_name, candidates
+        "Could not locate all config files co-located in any of: {:?}",
+        candidates
     )))
 }
 
@@ -98,6 +106,7 @@ fn parse_yaml_file_to_struct<T: DeserializeOwned>(
     path: &PathBuf,
     section: Option<String>,
 ) -> Result<T, YamlError> {
+    debug!("Parsing file {:?} into {}", path, std::any::type_name::<T>());
     let content = fs::read_to_string(path)
         .map_err(|e| YamlError::custom(format!("Failed to read {:?}: {}", path, e)))?;
 
@@ -105,63 +114,14 @@ fn parse_yaml_file_to_struct<T: DeserializeOwned>(
         .map_err(|e| YamlError::custom(format!("Failed to parse {:?}: {}", path, e)))?;
 
     if let Some(section_name) = section {
-        if let Some(section_value) = full_yaml.get(section_name) {
+        if let Some(section_value) = full_yaml.get(&section_name) {
             serde_yaml::from_value(section_value.clone())
+                .map_err(|e| YamlError::custom(format!("Failed to deserialize section '{}' in {:?}: {}", section_name, path, e)))
         } else {
-            serde_yaml::from_str("null")
+            Err(YamlError::custom(format!("Section '{}' not found in {:?}", section_name, path)))
         }
     } else {
         serde_yaml::from_value(full_yaml)
-    }
-}
-
-/// Merge local categories and subcategories recursively.
-/// Local data always overrides base data when names match.
-fn merge_categories(base: &mut Vec<Category>, local: Vec<Category>) {
-    for local_cat in local {
-        if let Some(existing_cat) = base.iter_mut().find(|c| c.category == local_cat.category) {
-            // Override category description if provided
-            if !local_cat.description.is_empty() {
-                existing_cat.description = local_cat.description.clone();
-            }
-
-            // Merge commands
-            merge_commands_list(&mut existing_cat.commands, local_cat.commands);
-
-            // Merge subcategories recursively
-            merge_subcategories(&mut existing_cat.subcategories, local_cat.subcategories);
-        } else {
-            // Entirely new category
-            base.push(local_cat);
-        }
-    }
-}
-
-/// Merge subcategories by name, giving precedence to local definitions.
-fn merge_subcategories(base: &mut Vec<SubCategory>, local: Vec<SubCategory>) {
-    for local_sub in local {
-        if let Some(existing_sub) = base.iter_mut().find(|s| s.name == local_sub.name) {
-            // Override subcategory description if provided
-            if !local_sub.description.is_empty() {
-                existing_sub.description = local_sub.description.clone();
-            }
-
-            // Merge commands
-            merge_commands_list(&mut existing_sub.commands, local_sub.commands);
-        } else {
-            // Entirely new subcategory
-            base.push(local_sub);
-        }
-    }
-}
-
-/// Merge commands, local takes precedence by name.
-fn merge_commands_list(base: &mut Vec<CommandDef>, local: Vec<CommandDef>) {
-    for local_cmd in local {
-        if let Some(existing_cmd) = base.iter_mut().find(|c| c.name == local_cmd.name) {
-            *existing_cmd = local_cmd;
-        } else {
-            base.push(local_cmd);
-        }
+            .map_err(|e| YamlError::custom(format!("Failed to deserialize file {:?}: {}", path, e)))
     }
 }

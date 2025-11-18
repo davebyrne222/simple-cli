@@ -20,7 +20,7 @@ pub struct Cli {
     #[arg(long)]
     pub clear_stored: bool,
 
-    /** Change active param group (params.yaml) */
+    /** Change active param group (scli.params.yaml) */
     #[arg(short, long)]
     pub switch_param_group: bool,
 

@@ -43,13 +43,13 @@ Tip: If an argument value includes spaces or special characters, wrap it in quot
 Your command catalog is defined in a single YAML file. A typical structure includes:
 
 - `defaults`: Optional global defaults that can be used in templates.
-- `categories` → `subcategories` → `commands`: Logical organization of commands.
+- `categories` → `subcategories` → `commands`: Logical organisation of commands.
 - Command fields:
     - `name`: The CLI name for the command.
     - `description`: What the command does (shown in interactive mode).
     - `exec`: The shell command to run. Supports template replacement for args/config.
     - `args`: Optional list of arguments. Each arg can have `name`, `prompt`, `default`, and `optional`.
-    - `pre_command`: Optionally run another defined command before this one (e.g., to list/select resources).
+    - `pre_command`: Optionally run another defined command before this one (e.g. to list/select resources).
 
 Templating:
 
@@ -94,8 +94,6 @@ Build from source:
 3) The compiled binary will be in `target/release/scli`. Put it on your PATH or run it directly:
     - `./target/release/scli -i`
 
-Alternatively, if you package or distribute binaries in your environment, place the binary on your PATH and run `scli`.
-
 ### Tool dependencies
 Your `exec` entries can call any tool available in your shell. For common examples:
 
@@ -108,7 +106,7 @@ Ensure these tools are installed and on your PATH when running commands that ref
 
 ### Customizing the CLI name
 By default, the cli is called using `scli` however, you can call the CLI whatever you want by setting the binary’s name
-in the `Cargo.toml` file.
+in the `Cargo.toml` file (or by setting an alias in your shell)
 
 ---
 
@@ -127,8 +125,8 @@ local file.
 - YAML hygiene:
     - Keep indentation consistent. Comments or stray tabs can break parsing.
 - Command not found:
-    - If a command in `exec` fails with “not found,” install the tool or add it to your PATH.
-- Test directly then codify:
+    - If a command in `exec` fails with “not found”, install the tool or add it to your PATH.
+- Test directly, then codify:
     - First run a command in your shell, then copy it into `exec` and parameterize with `{{ ... }}`.
 - Start interactive:
     - If you’re unsure about argument names or defaults, try `scli -i`.

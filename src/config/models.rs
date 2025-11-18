@@ -1,13 +1,35 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use serde_yaml::Value;
 
-/** Global configuration loaded from commands.yaml */
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ConfigFile {
+    pub filename: String,
+    pub path: PathBuf,
+}
+
+/** Global configuration loaded from config files */
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub defaults: Option<GlobalDefaults>,
-    pub groups: HashMap<String, UserParams>,
+    pub params: HashMap<String, UserParams>,
     pub categories: Vec<Category>,
+    pub files: HashMap<String, ConfigFile>
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            defaults: None,
+            params: HashMap::new(),
+            categories: Vec::new(),
+            files: HashMap::from([
+                ("paramsFile".to_string(), ConfigFile { filename: "scli.params.yaml".to_string(), path: PathBuf::new() }),
+                ("commandsFile".to_string(), ConfigFile { filename: "scli.commands.yaml".to_string(), path: PathBuf::new() })
+            ]),
+        }
+    }
 }
 
 /** Default values applied across commands */
