@@ -24,6 +24,30 @@
         - name: name
           prompt: Enter your name
 
+    - name: optional
+      description: An example of argument substitution
+      exec: >
+        echo Hello, my name is {{ name }}
+        {% if country %} and I live in {{ country }}{% endif %}
+      args:
+        - name: name
+          prompt: Enter your name
+        - name: country
+          prompt: Enter your country of origin (optional)
+          default: ireland
+
+    - name: ListFlavours
+      description: List available flavours
+      exec: printf "Vanilla, Strawberry, Chocolate\n" | tr ", " "\n"
+
+    - name: SelectFlavour
+      description: Ask the user to select a flavour
+      pre_command: demo.listflavours
+      exec: echo "A {{ flavour }} milkshake, coming right up!"
+      args:
+        - name: flavour
+          prompt: Which flavour do you want?
+
   # special args
   subcategories:
     - name: Special Args
