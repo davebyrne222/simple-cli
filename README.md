@@ -18,7 +18,7 @@ CLIs are powerful, but remembering commands, flags, and argument values is not.
 _SimpleCli_ lets you save and reuse them in a straightforward YAML file, keeping your workflows consistent and repeatable.
 
 Key capabilities:
-- Human-readable command catalogues defined in YAML
+- Command catalogues defined in YAML
 - Interactive mode with a simple menu and argument prompts
 - Flexible templating for argument substitution and command composition
 - Works with your existing tools (az, kubectl, jq, etc.) by orchestrating the shell commands you already use
