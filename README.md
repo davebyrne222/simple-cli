@@ -1,4 +1,4 @@
-<div style="text-align: center;">
+<div align="center">
 
 <img src="docs/images/Logo2.png" width="400" alt="SimpleCli Logo"/>
 
@@ -18,7 +18,7 @@ command(s), and having to remember or repeatably find the argument values?
 
 _SimpleCli_ was born from my frustration with working with the Azure and Kubernetes CLIs across multiple subscriptions
 and clusters. It aims to make it easier to run commands in a consistent and repeatable way without having to search
-through files for command definitions and copy and pasting argument values such as subscription IDs, or resource group
+through notes for command definitions, and copy and pasting argument values such as subscription IDs, or resource group
 names.
 
 Key capabilities:
