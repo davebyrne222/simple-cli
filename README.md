@@ -89,24 +89,20 @@ For better organisation, categories and subcategories can also be used:
 
 ```yaml
 - category: Demo
-  description: A collection of demo commands showing how to use the CLI
   commands:
     - name: Basic
-      description: Create a command and call it from the CLI e.g. `olcs demo.basic`
       exec: echo "Hello, world!"
   subcategories:
     - name: Subcategory
-      description: A subcategory of commands
       commands:
-        - name: params
-          description: An example of a subcategory command
+        - name: Basic
           exec: echo "Hello from the subcategory!"
 ```
 
-These commands can be invoked from the CLI as `scli demo.basic` and `scli demo.subcategory.params`, respectively.
+These commands can be invoked from the CLI as `scli demo.basic` and `scli demo.subcategory.basic`, respectively.
 
-The example `scli.commands.yaml` file included with this project and the [Advanced Usage](#advanced-usage) section
-provide further examples of the usage including argument substitution and composition.
+The example `scli.commands.yaml` file included with this project and the [Argument Substitution](#argument-substitution) 
+section provide further examples of the usage including argument substitution and composition.
 
 ## The `scli.params.yaml` file
 
