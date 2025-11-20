@@ -6,7 +6,7 @@
 
 <h2>A configurable, YAML-driven, command runner CLI</h2>
 
-Define repeatable command workflows with argument substitution and run them in your terminal.
+Define repeatable command workflows with parameter substitution and run them in your terminal.
 
 ![Status](https://img.shields.io/badge/status-wip-yellow)
 ![Version](https://img.shields.io/github/v/tag/davebyrne222/SimpleCli?label=latest%20version&color=blue)
@@ -21,9 +21,36 @@ repeatable.
 Key capabilities:
 
 - Command catalogues defined in YAML
-- Interactive mode with a simple menu and argument prompts
-- Flexible templating for argument substitution and command composition
+- Interactive mode with a simple menu and parameter prompts
+- Flexible templating for parameter substitution and command composition
 - Works with your existing tools (az, kubectl, jq, etc.) by orchestrating the shell commands you already use
+
+---
+
+# Terminology
+
+SimpleCli uses common command-line interface (CLI) conventions. To avoid confusion, the following terms are used
+consistently:
+
+- **Argument** — A positional value supplied to a command. Arguments do *not* start with `-` or `--`.
+- **Option** — A named input beginning with `-` or `--` (e.g., `-i`, `--group`). Options may accept a value or may act
+  as a boolean switch.
+- **Flag** — A boolean option that is either present or absent (e.g., `-i` for interactive mode).
+- **Parameter** — A value used for substitution inside `exec` commands. Parameters may come from the command line,
+  prompts, or the `scli.params.yaml` file.
+
+Consider the following `ls` command:
+
+```bash
+ls -l --color=auto /home/user
+```
+
+Breakdown:
+
+- `ls` — command / program name
+- `-l` — flag, boolean switch
+- `--color=auto` — option with a parameter (value)
+- `/home/user` — positional argument (operand)
 
 ---
 
@@ -43,15 +70,14 @@ Ensure you have:
 
 To Run a command directly simply use its full path from the `scli.commands.yaml` file, for example, `scli basic`.
 
-Tip: If an argument value includes spaces or special characters, wrap it in quotes.
+> [!TIP]
+> If a parameter includes spaces or special characters, wrap it in quotes.
 
 ## Interactive Mode
 
 To run in interactive mode, use the `-i` flag: `scli -i`. This will present an interactive menu of categories,
-subcategories, and commands which you can navigate through and select a command. If the command requires user input, it
-will prompt for a value.
-
-<div><p style="color:red">Insert image of an interactive menu</p></div>
+subcategories, and commands which you can navigate through and select a command. If the command requires parameter
+values, it will prompt for them.
 
 ---
 
@@ -60,7 +86,7 @@ will prompt for a value.
 _SimpleCli_ utilises two files:
 
 - `scli.commands.yaml` command definition file
-- `scli.params.yaml` parameter values for command argument substitution. **Optional**
+- `scli.params.yaml` parameter values for substitution [**Optional**]
 
 These files can be stored in a number of locations, as listed in order of search preference:
 
@@ -100,8 +126,9 @@ For better organisation, categories and subcategories can also be used:
 
 These commands can be invoked from the CLI as `scli demo.basic` and `scli demo.subcategory.basic`, respectively.
 
-The example `scli.commands.yaml` file included with this project and the [Argument Substitution](#argument-substitution) 
-section provide further examples of the usage including argument substitution and composition.
+The example `scli.commands.yaml` file included with this project and
+the [Parameter Substitution](#parameter-substitution) section provide further examples of the usage including parameter
+substitution and composition.
 
 ## The `scli.params.yaml` file
 
@@ -109,9 +136,9 @@ TBD
 
 ---
 
-# Argument Substitution
+# Parameter Substitution
 
-Argument substitution allows you to parameterise commands with values from a file or the CLI. To enable argument
+Parameter substitution allows you to parameterise commands with values from a file or the CLI. To enable parameter
 substitution, wrap the value to be substituted in double curly braces, for example: `{{ myvalue }}`.
 
 ```yaml
@@ -121,15 +148,15 @@ substitution, wrap the value to be substituted in double curly braces, for examp
       exec: echo "Hello, my name is {{ name }}
 ```
 
-Now, when running the command, a value can be provided for `name` **however**, the behaviour is slightly different
-depending on whether the command is invoked in interactive mode or not.
+Now, when running the command, a value can be provided for the parameter `name` **however**, the behaviour is slightly
+different depending on whether the command is invoked in interactive mode or not.
 
-In non-interactive mode, the value **must be provided** on the command line: `scli demo.substitution --arg name=Dave`
-except arguments marked optional or with default values.
+In non-interactive mode, the value **must be provided** on the command line using an option: for example,
+`scli demo.substitution -p name=Dave`, except for parameters marked optional or with default values.
 
-In interactive mode, the value will be prompted for and a user will asked to provide a value.
+In interactive mode, the value will be prompted for and a user will be asked to provide a value.
 
-## Customising Argument Prompts
+## Customising Parameter Prompts
 
 ```yaml
 - category: Demo
@@ -141,7 +168,7 @@ In interactive mode, the value will be prompted for and a user will asked to pro
           prompt: Enter your name
 ```
 
-When the cli prompts for an argument value, it will use the `prompt` field to instruct the user what to enter.
+When the CLI prompts for a parameter value, it will use the `prompt` field to instruct the user what to enter.
 
 ## Substitution from the Params File
 
@@ -168,7 +195,7 @@ substituted from the `scli.params.yaml` file, specifically the active group's `n
 
 Changing the active group (`scli -s`) in the params file will cause the command to run with the new value.
 
-## Optional Arguments
+## Optional Parameters
 
 ```yaml
 - category: Demo
@@ -185,17 +212,15 @@ Changing the active group (`scli -s`) in the params file will cause the command 
           optional: true
 ```
 
-Arguments can be marked as optional by setting the `optional` field to `true`. This will cause the argument to be
+Parameters can be marked as optional by setting the `optional` field to `true`. This will cause the parameter to be
 skipped if not provided.
 
 ## Default Values
 
 ```yaml
 - category: Demo
-  description: A collection of demo commands showing how to use the CLI
   commands:
-    - name: Args
-      description: An example of argument substitution
+    - name: DefaultValue
       exec: echo "Hello, my name is {{ name }}
       args:
         - name: name
@@ -204,7 +229,7 @@ skipped if not provided.
 ```
 
 To provide a default value, specify it in the `default` field. Now if the user does not provide a value for
-`name`, it will be substituted with the default value.
+the parameter `name`, the default value will be used.
 
 ---
 
@@ -251,7 +276,7 @@ mycli() {
 # Tips and Troubleshooting
 
 - Quoting matters:
-    - When passing values with spaces or special characters, wrap them in quotes: `--arg namespace="my ns"`.
+    - When passing option values containing spaces or special characters, wrap them in quotes: `namespace="my ns"`.
 - YAML hygiene:
     - Keep indentation consistent. Comments or stray tabs can break parsing.
 - Command not found:
@@ -265,8 +290,11 @@ mycli() {
 
 # Some _Hidden_ Features
 
-_SimpleCli_ started out as a personal project for use in DevOps with Azure. Here are some features that I added
-that may be useful to others:
+_SimpleCli_ started out as a personal project for use in a DevOps working with Azure. Here are some features that I added
+that may be useful to others.
+
+> [!CAUTION]
+> These features may be removed or changed in future releases.
 
 ## Kubectl Namespace Selection
 
@@ -308,7 +336,8 @@ values.
 
 # Future Plans:
 
-- Add support for argument value prompt options i.e. a list of options to choose from for an argument.
+- Add support for parameter value prompt options, i.e. a list of options to choose from for a parameter.
     - Support command execution or script execution for argument values.
 - Retrieve values from local secure storage, e.g. `{{"mysecret" | secret}}`
-- Semi-interactive mode for argument substitution when running a command non-interactively.
+- Semi-interactive mode for parameter substitution when running a command non-interactively.
+- Plugin architecture for adding tool-specific workflows, e.g. [kubectl namespace selection](#kubectl-namespace-selection) 
