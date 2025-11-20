@@ -80,17 +80,18 @@ pub struct SubCategory {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CommandDef {
     pub name: String,
+    #[serde(default)]
     pub description: String,
     pub exec: String,
     #[serde(default)]
-    pub args: Vec<ArgDef>,
+    pub params: Vec<ParamDef>,
     #[serde(default)]
     pub pre_command: Option<String>,
 }
 
 /** Argument definition for a command */
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct ArgDef {
+pub struct ParamDef {
     pub name: String,
     pub prompt: String,
     #[serde(default)]

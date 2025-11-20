@@ -32,11 +32,11 @@ pub fn handle_switch_subscription(cfg: &Config, ctx: &mut GlobalContext) {
 
 /** Build ARGS column for a command, wrapping optional args in [brackets]. */
 pub fn args_column(cmd: &CommandDef) -> String {
-    if cmd.args.is_empty() {
+    if cmd.params.is_empty() {
         return "-".to_string();
     }
     let mut parts: Vec<String> = Vec::new();
-    for a in &cmd.args {
+    for a in &cmd.params {
         if a.optional {
             parts.push(format!("[{}]", a.name));
         } else {

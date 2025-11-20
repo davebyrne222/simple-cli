@@ -349,11 +349,11 @@ fn format_commands_table(commands: &[CommandDef]) -> (Vec<String>, usize, usize)
 }
 
 fn format_command_args(cmd: &CommandDef) -> String {
-    if cmd.args.is_empty() {
+    if cmd.params.is_empty() {
         return "-".to_string();
     }
 
-    cmd.args.iter()
+    cmd.params.iter()
         .map(|arg| {
             if arg.optional {
                 format!("[{}]", arg.name)
