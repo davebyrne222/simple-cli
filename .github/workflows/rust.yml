@@ -1,9 +1,8 @@
-name: Rust
+name: CI
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
@@ -12,7 +11,6 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -37,23 +35,3 @@ jobs:
         with:
           name: build-output
           path: artifacts/
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
-          path: build-output
-
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: build-output/**
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

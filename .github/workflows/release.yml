@@ -1,0 +1,34 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Prepare artifacts
+        run: |
+          mkdir build-output
+          cp target/release/scli build-output/
+          cp scli.commands.yaml build-output/
+          cp scli.params.yaml build-output/
+          cp README.md build-output/
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build-output/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
