@@ -15,9 +15,11 @@ Define repeatable command workflows with argument substitution and run them in y
 
 CLIs are powerful, but remembering commands, flags, and argument values is not.
 
-_SimpleCli_ lets you save and reuse them in a straightforward YAML file, keeping your workflows consistent and repeatable.
+_SimpleCli_ lets you save and reuse them in a straightforward YAML file, keeping your workflows consistent and
+repeatable.
 
 Key capabilities:
+
 - Command catalogues defined in YAML
 - Interactive mode with a simple menu and argument prompts
 - Flexible templating for argument substitution and command composition
@@ -112,51 +114,62 @@ TBD
 
 ---
 
-# Advanced Usage
+# Argument Substitution
 
-## Argument Substitution by Command Line
+Argument substitution allows you to parameterise commands with values from a file or the CLI. To enable argument
+substitution, wrap the value to be substituted in double curly braces, for example: `{{ myvalue }}`.
 
 ```yaml
 - category: Demo
-  description: A collection of demo commands showing how to use the CLI
   commands:
-    - name: Args
-      description: An example of argument substitution
+    - name: substitution
       exec: echo "Hello, my name is {{ name }}
 ```
 
-If a command requires an argument override, it can be passed as argument to the command line by using the `--arg` flag.
-For the example above: `scli demo.args --arg name=Dave`
+Now, when running the command, a value can be provided for `name` **however**, the behaviour is slightly different
+depending on whether the command is invoked in interactive mode or not.
 
-## Argument Substitution by Prompting
+In non-interactive mode, the value **must be provided** on the command line: `scli demo.substitution --arg name=Dave`
+except arguments marked optional or with default values.
+
+In interactive mode, the value will be prompted for and a user will asked to provide a value.
+
+## Customising Argument Prompts
 
 ```yaml
 - category: Demo
-  description: A collection of demo commands showing how to use the CLI
   commands:
-    - name: Args
-      description: An example of argument substitution
+    - name: CustomPrompt
       exec: echo "Hello, my name is {{ name }}
       args:
         - name: name
           prompt: Enter your name
 ```
 
-Now, when running the command, the CLI will prompt for the value of `name`
+When the cli prompts for an argument value, it will use the `prompt` field to instruct the user what to enter.
 
-## Argument Substitution from Params File
+## Substitution from the Params File
 
 ```yaml
+# scli.commands.yaml
 - category: Demo
-  description: A collection of demo commands showing how to use the CLI
   commands:
-    - name: Args
-      description: An example of argument substitution
+    - name: ParamsSubstitution
       exec: echo "Hello, my name is {{ params.name }}
 ```
 
-Now, running this command will cause the value to be substituted from the `scli.params.yaml` file, specifically the
-active group's `name` parameter.
+```yaml
+# scli.params.yaml
+groups:
+  A:
+    name: Dave
+  B:
+    name: Alice
+```
+
+Instead of providing a value on the command line, you can also provide a value in the `scli.params.yaml` file. To do
+this, prefix the parameter name with `params.` e.g. `params.name`. Now, running this command will cause the value to be
+substituted from the `scli.params.yaml` file, specifically the active group's `name` parameter.
 
 Changing the active group (`scli -s`) in the params file will cause the command to run with the new value.
 
@@ -164,10 +177,8 @@ Changing the active group (`scli -s`) in the params file will cause the command 
 
 ```yaml
 - category: Demo
-  description: A collection of demo commands showing how to use the CLI
   commands:
     - name: Args
-      description: An example of argument substitution
       exec: >
         echo "Hello, my name is {{ name }}
         {% if country %} and I live in {{ country }}{% endif %}
@@ -178,6 +189,9 @@ Changing the active group (`scli -s`) in the params file will cause the command 
           prompt: Enter your country of origin (optional)
           optional: true
 ```
+
+Arguments can be marked as optional by setting the `optional` field to `true`. This will cause the argument to be
+skipped if not provided.
 
 ## Default Values
 
@@ -196,28 +210,6 @@ Changing the active group (`scli -s`) in the params file will cause the command 
 
 To provide a default value, specify it in the `default` field. Now if the user does not provide a value for
 `name`, it will be substituted with the default value.
-
-## Pre-Commands
-
-```yaml
-- category: Demo
-  description: A collection of demo commands showing how to use the CLI
-  commands:
-    - name: ListFlavours
-      description: List available flavours
-      exec: printf "Vanilla, Strawberry, Chocolate\n" | tr "," "\n"
-    - name: SelectFlavour
-      description: Ask the user to select a flavour
-      pre_command: demo.listflavours
-      exec: echo "A {{ flavour }} milkshake, coming right up!"
-      args:
-        - name: flavour
-          prompt: Which flavour do you want?
-```
-
-Optionally, run another defined command before this one. This, for example, could be to provide a reminder of possible
-values.
-
 ---
 
 # Installation
@@ -291,6 +283,24 @@ This will list all namespaces and will prompt the user to select one an option. 
 exec: kubectl get pods {{ "namespace" | i_param }} # note that the namespace flag '-n' is omitted
 ```
 
+## Pre-Commands
+
+```yaml
+- category: Demo
+  commands:
+    - name: ListFlavours
+      exec: printf "Vanilla, Strawberry, Chocolate\n" | tr "," "\n"
+    - name: SelectFlavour
+      pre_command: demo.listflavours
+      exec: echo "A {{ flavour }} milkshake, coming right up!"
+      args:
+        - name: flavour
+          prompt: Which flavour do you want?
+```
+
+Optionally, run another defined command before this one. This, for example, could be to provide a reminder of possible
+values.
+
 ---
 
 # Contributing
@@ -304,5 +314,5 @@ exec: kubectl get pods {{ "namespace" | i_param }} # note that the namespace fla
 
 - Add support for argument value prompt options i.e. a list of options to choose from for an argument.
     - Support command execution or script execution for argument values.
-- Retrieve values from local secure storage, e.g. `{{"mysecret" | secret}}` 
+- Retrieve values from local secure storage, e.g. `{{"mysecret" | secret}}`
 - Semi-interactive mode for argument substitution when running a command non-interactively.
