@@ -1,107 +1,181 @@
-use std::{collections::HashMap, fs, path::PathBuf, env};
-use serde::de::{DeserializeOwned, Error};
-use serde_yaml::Error as YamlError;
-use crate::config::Category;
-use super::models::{GlobalDefaults, UserParams};
-use dirs::data_dir;
+use std::{collections::HashMap, fs, path::{Path, PathBuf}, env};
+use serde::de::DeserializeOwned;
+use serde_yaml::Value;
+use super::models::{ConfigFile, Config};
+use log::{debug, info, warn, error};
+use thiserror::Error;
 
-/** Load default values from config.yaml */
-pub fn load_defaults() -> Result<Option<GlobalDefaults>, YamlError> {
-    parse_file_to_struct("params.yaml", "defaults")
+/// Error type for configuration loading
+#[derive(Debug, Error)]
+pub enum ConfigLoadError {
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("YAML parse error: {0}")]
+    Yaml(#[from] serde_yaml::Error),
+
+    #[error("Requested section '{0}' is missing in {1:?}")]
+    MissingSection(String, PathBuf),
+
+    #[error("Config file key missing: {0}")]
+    MissingConfigKey(String),
+
+    #[error("Could not find all config files in any candidate directory:\n{0}")]
+    MissingConfigFiles(String),
 }
 
-/** Load categories from commands.yaml */
-pub fn load_commands() -> Result<Vec<Category>, YamlError>{
-    parse_file_to_struct("commands.yaml", "categories")
+/// Top-level config loader
+pub fn load_config() -> Result<Config, ConfigLoadError> {
+    let mut config = Config::default();
+
+    debug!("Starting config load");
+
+    // Locate directory containing all required ConfigFiles
+    config.files = get_config_dir(&config.files)?;
+
+    // Get file paths
+    let params_file = config.files
+        .get("paramsFile")
+        .ok_or_else(|| ConfigLoadError::MissingConfigKey("paramsFile".to_string()))?;
+    let commands_file = config.files
+        .get("commandsFile")
+        .ok_or_else(|| ConfigLoadError::MissingConfigKey("commandsFile".to_string()))?;
+
+    // Read the params file
+    debug!("Reading params file at {:?}", params_file.path);
+    let params_yaml = read_yaml_file(&params_file.path)?;
+
+    debug!("Loading defaults from params file");
+    config.default_group = parse_section_from_value(&params_yaml, Some("default_group"), &params_file.path)?;
+
+    debug!("Loading params/groups from params file");
+    config.params = parse_section_from_value(&params_yaml, Some("groups"), &params_file.path)?;
+
+    // Read commands file
+    debug!("Reading commands file at {:?}", commands_file.path);
+    let commands_yaml = read_yaml_file(&commands_file.path)?;
+
+    debug!("Loading commands/categories from commands file");
+    config.categories = parse_section_from_value(&commands_yaml, None, &commands_file.path)?;
+
+    info!("Configuration loaded successfully");
+    Ok(config)
 }
 
-/** Load subscriptions from config.yaml */
-pub fn load_groups() -> Result<HashMap<String, UserParams>, YamlError> {
-    parse_file_to_struct("params.yaml", "groups")
-}
-
-/** Extract and parse yaml section to struct */
-fn parse_file_to_struct<T: DeserializeOwned>(file_path: &str, section: &str) -> Result<T, YamlError> {
-    use serde_yaml::Value;
-
-    // Candidate locations (prefer user data dir, then next to the executable, then current working directory)
+/// Given a map of expected files (key -> ConfigFile with `filename` set),
+/// find a directory that contains *all* those files co-located.
+///
+/// Candidate search order: $SIMPLE_CLI_DIR, $HOME/SimpleCli, current working dir.
+pub fn get_config_dir(files: &HashMap<String, ConfigFile>) -> Result<HashMap<String, ConfigFile>, ConfigLoadError> {
     let mut candidates: Vec<PathBuf> = Vec::new();
 
-    // 1) User data dir, e.g. ~/.local/share/olcs-cli/<file_path>
-    if let Some(mut dd) = data_dir() {
-        dd.push("olcs-cli");
-        candidates.push(dd.join(file_path));
-    }
-
-    // 2) Directory of the current executable
-    if let Ok(exe_path) = env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
-            candidates.push(exe_dir.join(file_path));
-        }
-    }
-
-    // 3) Current working directory
-    candidates.push(PathBuf::from(file_path));
-
-    // Try each candidate path in order
-    let mut last_err: Option<YamlError> = None;
-    let (used_path, content) = match candidates.iter().find_map(|p| {
-        match fs::read_to_string(p) {
-            Ok(c) => Some((p.clone(), c)),
-            Err(e) => {
-                last_err = Some(YamlError::custom(format!("Failed to read {:?}: {}", p, e)));
-                None
-            }
-        }
-    }) {
-        Some(ok) => ok,
-        None => {
-            let tried = candidates
-                .into_iter()
-                .map(|p| p.to_string_lossy().to_string())
-                .collect::<Vec<_>>()
-                .join(", ");
-            return Err(YamlError::custom(format!("Could not read {} from any of: {}", file_path, tried)));
-        }
-    };
-
-    let full_yaml: Value = serde_yaml::from_str(&content)
-        .map_err(|e| YamlError::custom(format!("Failed to parse {:?}: {}", used_path, e)))?;
-
-    // Extract the specific section
-    if let Some(section_value) = full_yaml.get(section) {
-        serde_yaml::from_value(section_value.clone())
+    // Envvar
+    if let Ok(env_path) = env::var("SIMPLE_CLI_DIR") {
+        let p = PathBuf::from(env_path);
+        debug!("Candidate from SIMPLE_CLI_DIR: {:?}", p);
+        candidates.push(p);
     } else {
-        serde_yaml::from_str("null")
-    }
-}
-
-/** Resolve the effective path to a config/params file using the same search order. */
-pub fn resolve_config_path(file_path: &str) -> Option<PathBuf> {
-    let mut candidates: Vec<PathBuf> = Vec::new();
-
-    if let Some(mut dd) = data_dir() {
-        dd.push("olcs-cli");
-        candidates.push(dd.join(file_path));
+        debug!("SIMPLE_CLI_DIR not set");
     }
 
-    if let Ok(exe_path) = env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
-            candidates.push(exe_dir.join(file_path));
+    // Home
+    if let Some(home) = dirs::home_dir() {
+        let p = home.join("SimpleCli");
+        debug!("Checking home candidate: {:?}", p);
+        if p.exists() {
+            candidates.push(p);
+        } else {
+            debug!("Home candidate missing: {:?}", p);
         }
     }
 
-    candidates.push(PathBuf::from(file_path));
+    // CWD
+    match env::current_dir() {
+        Ok(cwd) => {
+            debug!("Using current dir candidate: {:?}", cwd);
+            candidates.push(cwd);
+        }
+        Err(e) => warn!("Failed to get current working directory: {}", e),
+    }
 
-    for p in candidates {
-        if p.exists() {
-            // Prefer absolute (canonical) path; fall back to the found path on error.
-            if let Ok(abs) = fs::canonicalize(&p) {
-                return Some(abs);
+    if candidates.is_empty() {
+        return Err(ConfigLoadError::MissingConfigFiles(
+            "No candidate directories available".to_string()
+        ));
+    }
+
+    // For diagnostics: which files are missing per directory
+    let mut diagnostics: Vec<(PathBuf, Vec<String>)> = Vec::new();
+
+    // Try each candidate path
+    for dir in &candidates {
+        let mut cloned_map = files.clone();
+        let mut missing: Vec<String> = Vec::new();
+
+        debug!("Checking candidate dir {:?}", dir);
+
+        for (_key, cfg_file) in cloned_map.iter_mut() {
+            let path = dir.join(&cfg_file.filename);
+
+            if path.exists() {
+                debug!("  {:?}: found", path);
+                cfg_file.path = path;
             } else {
-                return Some(p);
+                debug!("  {:?}: missing", path);
+                missing.push(cfg_file.filename.clone());
             }
         }
+
+        if missing.is_empty() {
+            debug!("All required files found in {:?}", dir);
+            return Ok(cloned_map);
+        } else {
+            debug!("Candidate {:?} is missing files: {:?}", dir, missing);
+            diagnostics.push((dir.clone(), missing));
+        }
     }
-    None
+
+    // Message describing missing files per candidate
+    let mut msg = String::from("Missing files per candidate directory:\n");
+    for (dir, missing) in &diagnostics {
+        msg.push_str(&format!("- {:?} missing: {:?}\n", dir, missing));
+    }
+    msg.push_str("Searched candidates: SIMPLE_CLI_DIR, $HOME/SimpleCli, current working directory.");
+
+    error!("{}", msg);
+    Err(ConfigLoadError::MissingConfigFiles(msg))
+}
+
+/// Read a YAML file return a serde_yaml::Value
+fn read_yaml_file(path: &Path) -> Result<Value, ConfigLoadError> {
+    debug!("Reading YAML file {:?}", path);
+    let content = fs::read_to_string(path)?; // Io error -> ConfigLoadError::Io via From
+    let value: Value = serde_yaml::from_str(&content)?; // serde_yaml::Error -> ConfigLoadError::Yaml
+    Ok(value)
+}
+
+/// Extract a section (or deserialize the whole file if `section` is None)
+/// from a serde_yaml::Value and turn it into T.
+fn parse_section_from_value<T: DeserializeOwned>(
+    full_yaml: &Value,
+    section: Option<&str>,
+    path: &Path,
+) -> Result<T, ConfigLoadError> {
+    match section {
+        Some(name) => {
+            match full_yaml.get(name) {
+                Some(value) => {
+                    let v = value.clone();
+                    let t = serde_yaml::from_value(v)?;
+                    Ok(t)
+                }
+                None => Err(ConfigLoadError::MissingSection(name.to_string(), path.to_path_buf())),
+            }
+        }
+        None => {
+            let v = full_yaml.clone();
+            let t = serde_yaml::from_value(v)?;
+            Ok(t)
+        }
+    }
 }

@@ -8,9 +8,9 @@ use clap::Parser;
 #[command(about = "Run common team commands easily")]
 pub struct Cli {
 
-    /** Override arguments (key=value) */
-    #[arg(long = "arg")]
-    pub args: Vec<String>,
+    /** Override parameter (key=value) */
+    #[arg(short, long = "param")]
+    pub param: Vec<String>,
 
     /** Show config and exit */
     #[arg(long)]
@@ -20,7 +20,7 @@ pub struct Cli {
     #[arg(long)]
     pub clear_stored: bool,
 
-    /** Change active param group (params.yaml) */
+    /** Change active param group (scli.params.yaml) */
     #[arg(short, long)]
     pub switch_param_group: bool,
 

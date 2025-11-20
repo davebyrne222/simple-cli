@@ -15,7 +15,7 @@ Thumbs.db
 *.iml
 
 # Local config and secrets
-/.config/olcs-cli/
+/.config/simple-cli/
 **/last_subscription
 **/last_namespace
 **/cache/

@@ -12,14 +12,14 @@ pub fn find_command<'a>(categories: &'a [Category], name: &str) -> Option<&'a Co
     let search_cmd_name = normalize_name(name);
     for cat in categories {
         for cmd in &cat.commands {
-            let cmd_name = normalize_name(&format!("{}.{}", &cat.name, &cmd.name));
+            let cmd_name = normalize_name(&format!("{}.{}", &cat.category, &cmd.name));
             if cmd_name == search_cmd_name {
                 return Some(cmd);
             }
         }
         for sub in &cat.subcategories {
             for cmd in &sub.commands {
-                let cmd_name = normalize_name(&format!("{}.{}.{}", &cat.name, &sub.name, &cmd.name));
+                let cmd_name = normalize_name(&format!("{}.{}.{}", &cat.category, &sub.name, &cmd.name));
                 if cmd_name == search_cmd_name {
                     return Some(cmd);
                 }

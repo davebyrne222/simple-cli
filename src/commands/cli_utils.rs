@@ -4,12 +4,12 @@ use crate::config::{CommandDef, Config, GlobalContext};
 use crate::interactive::switchers::switch_subscription;
 
 pub fn handle_switch_subscription(cfg: &Config, ctx: &mut GlobalContext) {
-    if cfg.groups.is_empty() {
+    if cfg.params.is_empty() {
         println!("No groups configured.");
         return;
     }
 
-    let mut names: Vec<String> = cfg.groups.keys().cloned().collect();
+    let mut names: Vec<String> = cfg.params.keys().cloned().collect();
     names.sort();
 
     let default_idx = ctx
@@ -32,11 +32,11 @@ pub fn handle_switch_subscription(cfg: &Config, ctx: &mut GlobalContext) {
 
 /** Build ARGS column for a command, wrapping optional args in [brackets]. */
 pub fn args_column(cmd: &CommandDef) -> String {
-    if cmd.args.is_empty() {
+    if cmd.params.is_empty() {
         return "-".to_string();
     }
     let mut parts: Vec<String> = Vec::new();
-    for a in &cmd.args {
+    for a in &cmd.params {
         if a.optional {
             parts.push(format!("[{}]", a.name));
         } else {
@@ -187,9 +187,9 @@ NAME/DESCRIPTION/ARGS table format as interactive mode.
 */
 pub fn list_commands(cfg: &Config) {
     for cat in &cfg.categories {
-        println!("\n{}", cat.name.bold().on_blue());
+        println!("\n{}", cat.category.bold().on_blue());
 
-        let cat_prefix = normalize_name(&cat.name);
+        let cat_prefix = normalize_name(&cat.category);
         if !cat.commands.is_empty() {
             for line in render_table(&cat.commands, &cat_prefix) {
                 println!("  {}", line);

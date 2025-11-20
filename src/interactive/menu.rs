@@ -110,7 +110,7 @@ fn build_root_menu(cfg: &Config) -> Menu {
 
     // Add categories
     for (idx, category) in cfg.categories.iter().enumerate() {
-        menu.add(category.name.clone(), MenuItem::NavigateCategory(idx));
+        menu.add(category.category.clone(), MenuItem::NavigateCategory(idx));
     }
 
     if menu.labels.is_empty() {
@@ -349,11 +349,11 @@ fn format_commands_table(commands: &[CommandDef]) -> (Vec<String>, usize, usize)
 }
 
 fn format_command_args(cmd: &CommandDef) -> String {
-    if cmd.args.is_empty() {
+    if cmd.params.is_empty() {
         return "-".to_string();
     }
 
-    cmd.args.iter()
+    cmd.params.iter()
         .map(|arg| {
             if arg.optional {
                 format!("[{}]", arg.name)
@@ -369,12 +369,12 @@ fn create_prompt_for_level(level: &MenuLevel, cfg: &Config) -> String {
     match level {
         MenuLevel::Root => "Select a category or action".to_string(),
         MenuLevel::Category(ci) => {
-            format!("Category: {} — choose subcategory or command", cfg.categories[*ci].name)
+            format!("Category: {} — choose subcategory or command", cfg.categories[*ci].category)
         }
         MenuLevel::SubCategory(ci, si) => {
             format!(
                 "Subcategory: {} / {} — choose a command",
-                cfg.categories[*ci].name,
+                cfg.categories[*ci].category,
                 cfg.categories[*ci].subcategories[*si].name
             )
         }

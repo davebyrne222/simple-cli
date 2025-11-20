@@ -1,19 +1,35 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use serde_yaml::Value;
 
-/** Global configuration loaded from commands.yaml */
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct Config {
-    pub defaults: Option<GlobalDefaults>,
-    pub groups: HashMap<String, UserParams>,
-    pub categories: Vec<Category>,
+pub struct ConfigFile {
+    pub filename: String,
+    pub path: PathBuf,
 }
 
-/** Default values applied across commands */
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct GlobalDefaults {
-    pub group: Option<String>,
+/** Global configuration loaded from config files */
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Config {
+    pub default_group: Option<String>,
+    pub params: HashMap<String, UserParams>,
+    pub categories: Vec<Category>,
+    pub files: HashMap<String, ConfigFile>
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            default_group: None,
+            params: HashMap::new(),
+            categories: Vec::new(),
+            files: HashMap::from([
+                ("paramsFile".to_string(), ConfigFile { filename: "scli.params.yaml".to_string(), path: PathBuf::new() }),
+                ("commandsFile".to_string(), ConfigFile { filename: "scli.commands.yaml".to_string(), path: PathBuf::new() })
+            ]),
+        }
+    }
 }
 
 /**
@@ -24,7 +40,7 @@ pub struct GlobalContext {
     pub current_group: Option<String>,
 }
 
-/** User parameters with arbitrary key-value pairs (from config.yaml subscriptions).
+/** User parameters with arbitrary key-value pairs (from scli.params.yaml groups).
     All fields are accessible in templates via `config.<key>`. */
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct UserParams {
@@ -35,7 +51,9 @@ pub struct UserParams {
 /** Top-level category grouping commands */
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Category {
-    pub name: String,
+    pub category: String,
+    #[serde(default)]
+    pub description: String,
     #[serde(default)]
     pub commands: Vec<CommandDef>,
     #[serde(default)]
@@ -47,6 +65,8 @@ pub struct Category {
 pub struct SubCategory {
     pub name: String,
     #[serde(default)]
+    pub description: String,
+    #[serde(default)]
     pub commands: Vec<CommandDef>,
 }
 
@@ -54,17 +74,18 @@ pub struct SubCategory {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CommandDef {
     pub name: String,
+    #[serde(default)]
     pub description: String,
     pub exec: String,
     #[serde(default)]
-    pub args: Vec<ArgDef>,
+    pub params: Vec<ParamDef>,
     #[serde(default)]
     pub pre_command: Option<String>,
 }
 
 /** Argument definition for a command */
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct ArgDef {
+pub struct ParamDef {
     pub name: String,
     pub prompt: String,
     #[serde(default)]

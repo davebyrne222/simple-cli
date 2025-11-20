@@ -11,7 +11,7 @@ use dialoguer::Input;
 pub fn collect_arguments(cmd: &CommandDef, overrides: &HashMap<String, String>) -> HashMap<String, String> {
     let mut collected = overrides.clone();
 
-    for arg in &cmd.args {
+    for arg in &cmd.params {
         if collected.contains_key(&arg.name) {
             continue;
         }

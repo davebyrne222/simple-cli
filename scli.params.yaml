@@ -1,7 +1,5 @@
-# params.yaml
-# Non-sensitive information only.
-defaults:
-  group: dev
+# scli.params.yaml
+default_group: dev
 groups:
   dev:
     subscription_id: "dev-subscription-id"

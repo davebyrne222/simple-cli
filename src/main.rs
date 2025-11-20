@@ -9,31 +9,22 @@ use clap::Parser;
 use cli::Cli;
 use commands::{find_command, run_command};
 use config::{
-    create_context, load_commands, load_defaults, load_groups, resolve_config_path, Config,
+    create_context, load_config, Config,
 };
 use interactive::run_interactive;
 use crate::utils::io::clear_saved_data;
 use serde_yaml;
 use std::collections::HashMap;
+use std::path::PathBuf;
+use log::warn;
 
-/**
- Entry point: init: load config and initialize context
-*/
+/// Entry point: init: load config and initialize context
 fn main() {
-    // Load default values from config.yaml
-    let defaults = load_defaults().expect("Failed to load defaults from config.yaml");
+    // init logger
+    env_logger::init();
 
-    let commands = load_commands().expect("Failed to load commands from commands.yaml");
-
-    let groups =
-        load_groups().expect("Failed to load groups from params.yaml");
-
-    // Load dynamic commands.yaml from CWD and merge local groups
-    let config = Config {
-        defaults,
-        groups,
-        categories: commands,
-    };
+    // loqd values from files
+    let config = load_config().expect("Failed to load config");
 
     // Initialize global context
     let mut global_ctx = create_context(&config);
@@ -42,9 +33,7 @@ fn main() {
     handle_args(&config, &mut global_ctx);
 }
 
-/**
- parse CLI and dispatch to interactive or directly execute.
-*/
+/// parse CLI and dispatch to interactive or directly execute.
 fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
     //parse CLI
     let cli = Cli::parse();
@@ -61,13 +50,18 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
     // Show config and exit
     if cli.show_active_params {
         let active_group = global_ctx.current_group.as_ref().unwrap();
-        // Show the resolved path to params.yaml
-        if let Some(path) = resolve_config_path("params.yaml") {
-            println!("Params file: {}", path.display());
-        } else {
-            println!("Params file: <not found>");
-        }
-        match serde_yaml::to_string(&config.groups.get(active_group)) {
+
+        let path = match config.files.get("paramsFile") {
+            Some(file) => file.path.clone(),
+            None => {
+                warn!("paramsFile is missing in config");
+                PathBuf::from("scli.params.yaml")
+            }
+        };
+
+        println!("Params file: {}", path.display());
+
+        match serde_yaml::to_string(&config.params.get(active_group)) {
             Ok(subs_yaml) => {
                 println!("Active group: {}", active_group);
                 println!("Params:\n  {}", subs_yaml.replace("\n", "\n  "));
@@ -91,17 +85,17 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
         return;
     }
 
-    // Build argument overrides from cli.args
-    let mut arg_overrides: HashMap<String, String> = HashMap::new();
-    for arg in &cli.args {
-        if let Some((k, v)) = arg.split_once('=') {
-            arg_overrides.insert(k.to_string(), v.to_string());
+    // Build param overrides from cli.param
+    let mut param_overrides: HashMap<String, String> = HashMap::new();
+    for param in &cli.param {
+        if let Some((k, v)) = param.split_once('=') {
+            param_overrides.insert(k.to_string(), v.to_string());
         }
     }
 
     // Run interactive mode
     if cli.interactive {
-        run_interactive(&config, &mut global_ctx, &arg_overrides);
+        run_interactive(&config, &mut global_ctx, &param_overrides);
         return;
     }
 
@@ -109,7 +103,7 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
     if let Some(cmd_name) = cli.command {
         match find_command(&config.categories, &cmd_name) {
             Some(cmd) => {
-                if let Err(e) = run_command(cmd, config, &mut global_ctx, &arg_overrides) {
+                if let Err(e) = run_command(cmd, config, &mut global_ctx, &param_overrides) {
                     eprintln!("Failed to execute command: {}", e);
                 }
             }

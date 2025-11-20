@@ -9,8 +9,8 @@ use crate::utils::io::{load_last_value, save_last_value};
 pub fn create_context(cfg: &Config) -> GlobalContext {
     let mut ctx = GlobalContext::default();
 
-    if let Some(def) = &cfg.defaults {
-        ctx.current_group = def.group.clone();
+    if let Some(def) = &cfg.default_group {
+        ctx.current_group = Some(def.clone());
     }
 
     // Load last used values (if present)
@@ -29,7 +29,7 @@ pub fn set_last_used(key: &str, value: &str) {
 #[allow(dead_code)]
 pub fn config_data_dir() -> PathBuf {
     let mut dir = config_dir().unwrap_or_default();
-    dir.push("olcs-cli");
+    dir.push("simple-cli");
     fs::create_dir_all(&dir).ok();
     dir
 }
