@@ -38,7 +38,6 @@ Ensure you have:
 
 ```yaml
 - name: basic
-  description: Create a command and call it from the CLI e.g. `olcs demo.basic`
   exec: echo "Hello, world!"
 ```
 
