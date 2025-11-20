@@ -132,7 +132,26 @@ substitution and composition.
 
 ## The `scli.params.yaml` file
 
-TBD
+If the values for parameters are known in advance, they can be defined in the `scli.params.yaml` file to enable
+automated parameter substitution (see [Substitution from the Params File](#substitution-from-the-params-file)).
+
+The file format is as follows:
+
+```yaml
+defaults:
+  group: group_a
+groups:
+  group_a:
+    name: Dave
+  group_b:
+    name: Alice
+```
+
+- The defaults section defines the default group to use when no group has been explicitly set.
+- The groups section defines sets of parameters grouped by context. Each group contains a set of parameter values that can be used in commands. This allows the same parameter to have different values in different contexts, such as different users or environments.
+
+[!IMPORTANT]
+Only one group can be active at a time and is selected using the -s flag.
 
 ---
 
@@ -290,7 +309,8 @@ mycli() {
 
 # Some _Hidden_ Features
 
-_SimpleCli_ started out as a personal project for use in a DevOps working with Azure. Here are some features that I added
+_SimpleCli_ started out as a personal project for use in a DevOps working with Azure. Here are some features that I
+added
 that may be useful to others.
 
 > [!CAUTION]
@@ -340,4 +360,5 @@ values.
     - Support command execution or script execution for argument values.
 - Retrieve values from local secure storage, e.g. `{{"mysecret" | secret}}`
 - Semi-interactive mode for parameter substitution when running a command non-interactively.
-- Plugin architecture for adding tool-specific workflows, e.g. [kubectl namespace selection](#kubectl-namespace-selection) 
+- Plugin architecture for adding tool-specific workflows,
+  e.g. [kubectl namespace selection](#kubectl-namespace-selection) 
