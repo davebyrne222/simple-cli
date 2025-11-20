@@ -151,7 +151,7 @@ groups:
 - The groups section defines sets of parameters grouped by context. Each group contains a set of parameter values that can be used in commands. This allows the same parameter to have different values in different contexts, such as different users or environments.
 
 > [!IMPORTANT]
-> Only one group can be active at a time and is selected using the -s flag.
+> Only one group can be active at a time and is selected using the `-s` flag.
 
 ---
 
