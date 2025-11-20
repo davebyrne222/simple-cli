@@ -119,8 +119,8 @@ Your catalogue of commands is defined in this YAML file. The basic structure is 
 Where the available command fields are:
 
 - `name`: The CLI name for the command.
-- `description`: What the command does (shown in interactive mode).
 - `exec`: The shell command to run.
+- `description`: What the command does (shown in interactive mode) [optional].
 
 For better organisation, categories and subcategories can also be used:
 
@@ -150,8 +150,7 @@ automated parameter substitution (see [Substitution from the Params File](#subst
 The file format is as follows:
 
 ```yaml
-defaults:
-  group: group_a
+default_group: group_a
 groups:
   group_a:
     name: Dave
@@ -159,7 +158,7 @@ groups:
     name: Alice
 ```
 
-- The defaults section defines the default group to use when no group has been explicitly set.
+- The default_group field defines the default group to use when no group has been explicitly set as active.
 - The groups section defines sets of parameters grouped by context. Each group contains a set of parameter values that can be used in commands. This allows the same parameter to have different values in different contexts, such as different users or environments.
 
 > [!IMPORTANT]
@@ -194,7 +193,7 @@ In interactive mode, the value will be prompted for and a user will be asked to 
   commands:
     - name: CustomPrompt
       exec: echo "Hello, my name is {{ name }}
-      args:
+      params:
         - name: name
           prompt: Enter your name
 ```
@@ -235,7 +234,7 @@ Changing the active group (`scli -s`) in the params file will cause the command 
       exec: >
         echo "Hello, my name is {{ name }}
         {% if country %} and I live in {{ country }}{% endif %}
-      args:
+      params:
         - name: name
           prompt: Enter your name
         - name: country
@@ -253,7 +252,7 @@ skipped if not provided.
   commands:
     - name: DefaultValue
       exec: echo "Hello, my name is {{ name }}
-      args:
+      params:
         - name: name
           prompt: Enter your name
           default: Dave
