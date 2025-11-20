@@ -14,26 +14,65 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            archive: tar.gz
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build
-        run: cargo build --release
+      # Install Rust toolchain for the matrix target
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
-      - name: Prepare artifacts
+      # Build the binary
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      # Package artifacts into a tarball
+      - name: Create tarball
         run: |
-          mkdir build-output
-          cp target/release/scli build-output/
-          cp scli.commands.yaml build-output/
-          cp scli.params.yaml build-output/
-          cp README.md build-output/
+          mkdir package
+          cp target/${{ matrix.target }}/release/scli package/
+          cp scli.commands.yaml package/
+          cp scli.params.yaml package/
+          cp README.md package/
 
-      - name: Upload to GitHub Release
+          TAR_NAME="scli-${{ github.ref_name }}-${{ matrix.target }}.tar.gz"
+          tar -czvf "$TAR_NAME" -C package .
+
+          echo "TAR_NAME=$TAR_NAME" >> $GITHUB_ENV
+
+      # Upload tarball as workflow artifact
+      - name: Upload tarball artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TAR_NAME }}
+          path: ${{ env.TAR_NAME }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Upload tarballs to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build-output/**
+          files: dist/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
