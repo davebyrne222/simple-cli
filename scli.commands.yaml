@@ -8,33 +8,44 @@
 
     - name: args
       description: >
-        Specify an argument to the command for replacement and it can be passed as a command line argument 
+        Specify an argument to the command for replacement and it can be passed as a command line argument
         e.g. `olcs demo.args --arg name=Dave`
       exec: echo Hello, {{ name }}
-      args:
+      params:
         - name: name
           prompt: Enter your name
 
     - name: interactive
       description: >
-        Running in interactive mode will present a navigable menu of commands. Where required, users will be 
+        Running in interactive mode will present a navigable menu of commands. Where required, users will be
         prompted for input. Try running `olcs -i` and find this command in the list (Demo > interactive).
       exec: echo {{ name }}, we are running interactively!
-      args:
+      params:
         - name: name
           prompt: Enter your name
 
+    - name: default
+      description: An example of argument substitution with a default value
+      exec: >
+        echo Hello, my name is {{ name }} and I live in {{ country }}
+      params:
+        - name: name
+          prompt: Enter your name
+        - name: country
+          prompt: Enter your country of origin (default = Ireland)
+          default: ireland
+
     - name: optional
-      description: An example of argument substitution
+      description: An example of optional argument substitution
       exec: >
         echo Hello, my name is {{ name }}
         {% if country %} and I live in {{ country }}{% endif %}
-      args:
+      params:
         - name: name
           prompt: Enter your name
         - name: country
           prompt: Enter your country of origin (optional)
-          default: ireland
+          optional: true
 
     - name: ListFlavours
       description: List available flavours
@@ -44,7 +55,7 @@
       description: Ask the user to select a flavour
       pre_command: demo.listflavours
       exec: echo "A {{ flavour }} milkshake, coming right up!"
-      args:
+      params:
         - name: flavour
           prompt: Which flavour do you want?
 
@@ -59,7 +70,7 @@
 
         - name: namespace
           description: >
-            Using the 'i_param' (i.e. interactive_parameter) filter will cause the CLI to present options for the user to 
+            Using the 'i_param' (i.e. interactive_parameter) filter will cause the CLI to present options for the user to
             select for the namespace in interactive mode. The namespace can be overridden on the command line
             e.g. `olcs demo.namespace --arg namespace="-n olcs"`. ** Please note that the namespace must be in quotes **
           exec: echo "You selected the {{ "namespace" | i_param }} namespace"
