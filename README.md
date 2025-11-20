@@ -10,6 +10,7 @@ Define repeatable command workflows with parameter substitution and run them in 
 
 ![Status](https://img.shields.io/badge/status-wip-yellow)
 ![Version](https://img.shields.io/github/v/tag/davebyrne222/SimpleCli?label=latest%20version&color=blue)
+![Platform](https://img.shields.io/badge/platform-Ubuntu%20|%20macOS-lightblue)
 
 </div>
 
@@ -24,6 +25,33 @@ Key capabilities:
 - Interactive mode with a simple menu and parameter prompts
 - Flexible templating for parameter substitution and command composition
 - Works with your existing tools (az, kubectl, jq, etc.) by orchestrating the shell commands you already use
+
+---
+
+# Quick Start
+
+## Basic Usage
+
+Ensure you have:
+
+- A working shell environment with any tools your commands will call (e.g., Azure CLI `az`, `kubectl`, `jq`).
+- A `scli.commands.yaml` file in your working directory with commands listed as follows (see below for more examples):
+
+```yaml
+- name: basic
+  exec: echo "Hello, world!"
+```
+
+To Run a command directly simply use its full path from the `scli.commands.yaml` file, for example, `scli basic`.
+
+> [!TIP]
+> If a parameter includes spaces or special characters, wrap it in quotes.
+
+## Interactive Mode
+
+To run in interactive mode, use the `-i` flag: `scli -i`. This will present an interactive menu of categories,
+subcategories, and commands which you can navigate through and select a command. If the command requires parameter
+values, it will prompt for them.
 
 ---
 
@@ -54,30 +82,14 @@ Breakdown:
 
 ---
 
-# Quick Start
+# Supported Platforms
 
-## Basic Usage
+This project has been tested on the following operating systems:
 
-Ensure you have:
+- **Ubuntu** (20.04+ recommended)
+- **macOS** (Catalina / 10.15+)
 
-- A working shell environment with any tools your commands will call (e.g., Azure CLI `az`, `kubectl`, `jq`).
-- A `scli.commands.yaml` file in your working directory with commands listed as follows (see below for more examples):
-
-```yaml
-- name: basic
-  exec: echo "Hello, world!"
-```
-
-To Run a command directly simply use its full path from the `scli.commands.yaml` file, for example, `scli basic`.
-
-> [!TIP]
-> If a parameter includes spaces or special characters, wrap it in quotes.
-
-## Interactive Mode
-
-To run in interactive mode, use the `-i` flag: `scli -i`. This will present an interactive menu of categories,
-subcategories, and commands which you can navigate through and select a command. If the command requires parameter
-values, it will prompt for them.
+Other platforms may work, but they are **untested**.
 
 ---
 
