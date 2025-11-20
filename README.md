@@ -128,8 +128,6 @@ TBD
 If a command requires an argument override, it can be passed as argument to the command line by using the `--arg` flag.
 For the example above: `scli demo.args --arg name=Dave`
 
-<div><p style="color:red">What happens when arg is not provided? Can set a generic prompt: "Provide value for 'name'"?</p></div>
-
 ## Argument Substitution by Prompting
 
 ```yaml
@@ -144,12 +142,7 @@ For the example above: `scli demo.args --arg name=Dave`
           prompt: Enter your name
 ```
 
-Now, when running the command, the CLI will prompt for the value of `name`. This will be prompted in both interactive
-and non-interactive mode.
-
-<div><p style="color:red">Check this!</p></div>
-
-- `args`: Optional list of arguments. Each arg can have `name`, `prompt`, `default`, and `optional`.
+Now, when running the command, the CLI will prompt for the value of `name`
 
 ## Argument Substitution from Params File
 
@@ -186,8 +179,6 @@ Changing the active group (`scli -s`) in the params file will cause the command 
           optional: true
 ```
 
-<div><p style="color:red">Not working</p></div>
-
 ## Default Values
 
 ```yaml
@@ -205,8 +196,6 @@ Changing the active group (`scli -s`) in the params file will cause the command 
 
 To provide a default value, specify it in the `default` field. Now if the user does not provide a value for
 `name`, it will be substituted with the default value.
-
-<div><p style="color:red">Not prompting for name</p></div>
 
 ## Pre-Commands
 
@@ -316,3 +305,4 @@ exec: kubectl get pods {{ "namespace" | i_param }} # note that the namespace fla
 - Add support for argument value prompt options i.e. a list of options to choose from for an argument.
     - Support command execution or script execution for argument values.
 - Retrieve values from local secure storage, e.g. `{{"mysecret" | secret}}` 
+- Semi-interactive mode for argument substitution when running a command non-interactively.
