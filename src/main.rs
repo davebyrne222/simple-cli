@@ -85,17 +85,17 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
         return;
     }
 
-    // Build argument overrides from cli.args
-    let mut arg_overrides: HashMap<String, String> = HashMap::new();
-    for arg in &cli.args {
-        if let Some((k, v)) = arg.split_once('=') {
-            arg_overrides.insert(k.to_string(), v.to_string());
+    // Build param overrides from cli.param
+    let mut param_overrides: HashMap<String, String> = HashMap::new();
+    for param in &cli.param {
+        if let Some((k, v)) = param.split_once('=') {
+            param_overrides.insert(k.to_string(), v.to_string());
         }
     }
 
     // Run interactive mode
     if cli.interactive {
-        run_interactive(&config, &mut global_ctx, &arg_overrides);
+        run_interactive(&config, &mut global_ctx, &param_overrides);
         return;
     }
 
@@ -103,7 +103,7 @@ fn handle_args(config: &Config, mut global_ctx: &mut config::GlobalContext) {
     if let Some(cmd_name) = cli.command {
         match find_command(&config.categories, &cmd_name) {
             Some(cmd) => {
-                if let Err(e) = run_command(cmd, config, &mut global_ctx, &arg_overrides) {
+                if let Err(e) = run_command(cmd, config, &mut global_ctx, &param_overrides) {
                     eprintln!("Failed to execute command: {}", e);
                 }
             }
