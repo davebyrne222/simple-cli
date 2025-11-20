@@ -13,20 +13,15 @@ Define repeatable command workflows with argument substitution and run them in y
 
 </div>
 
-Do you work within the command line? Do you find yourself running the same commands over and over again, forgetting the
-command(s), and having to remember or repeatably find the argument values?
+CLIs are powerful, but remembering commands, flags, and argument values is not.
 
-_SimpleCli_ was born from my frustration with working with the Azure and Kubernetes CLIs across multiple subscriptions
-and clusters. It aims to make it easier to run commands in a consistent and repeatable way without having to search
-through notes for command definitions, and copy and pasting argument values such as subscription IDs, or resource group
-names.
+_SimpleCli_ lets you save and reuse them in a straightforward YAML file, keeping your workflows consistent and repeatable.
 
 Key capabilities:
-
-- Human-friendly command catalogue in YAML
-- Interactive mode with a navigable menu and prompts for arguments.
-- Powerful templating for command argument substitution and composition.
-- Works with your existing tooling (e.g., `az`, `kubectl`, `jq`) by orchestrating shell commands you already use.
+- Human-readable command catalogues defined in YAML
+- Interactive mode with a simple menu and argument prompts
+- Flexible templating for argument substitution and command composition
+- Works with your existing tools (az, kubectl, jq, etc.) by orchestrating the shell commands you already use
 
 ---
 
