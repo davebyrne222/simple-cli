@@ -9,8 +9,8 @@ use crate::utils::io::{load_last_value, save_last_value};
 pub fn create_context(cfg: &Config) -> GlobalContext {
     let mut ctx = GlobalContext::default();
 
-    if let Some(def) = &cfg.defaults {
-        ctx.current_group = def.group.clone();
+    if let Some(def) = &cfg.default_group {
+        ctx.current_group = Some(def.clone());
     }
 
     // Load last used values (if present)

@@ -46,7 +46,7 @@ pub fn load_config() -> Result<Config, ConfigLoadError> {
     let params_yaml = read_yaml_file(&params_file.path)?;
 
     debug!("Loading defaults from params file");
-    config.defaults = parse_section_from_value(&params_yaml, Some("defaults"), &params_file.path)?;
+    config.default_group = parse_section_from_value(&params_yaml, Some("default_group"), &params_file.path)?;
 
     debug!("Loading params/groups from params file");
     config.params = parse_section_from_value(&params_yaml, Some("groups"), &params_file.path)?;

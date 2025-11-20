@@ -12,7 +12,7 @@ pub struct ConfigFile {
 /** Global configuration loaded from config files */
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    pub defaults: Option<GlobalDefaults>,
+    pub default_group: Option<String>,
     pub params: HashMap<String, UserParams>,
     pub categories: Vec<Category>,
     pub files: HashMap<String, ConfigFile>
@@ -21,7 +21,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            defaults: None,
+            default_group: None,
             params: HashMap::new(),
             categories: Vec::new(),
             files: HashMap::from([
@@ -32,12 +32,6 @@ impl Default for Config {
     }
 }
 
-/** Default values applied across commands */
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct GlobalDefaults {
-    pub group: Option<String>,
-}
-
 /**
 Runtime global context used across modules.
 */
@@ -46,7 +40,7 @@ pub struct GlobalContext {
     pub current_group: Option<String>,
 }
 
-/** User parameters with arbitrary key-value pairs (from config.yaml subscriptions).
+/** User parameters with arbitrary key-value pairs (from scli.params.yaml groups).
     All fields are accessible in templates via `config.<key>`. */
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct UserParams {
