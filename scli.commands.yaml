@@ -1,3 +1,12 @@
+- category: Test
+  commands:
+    - name: args
+      exec: echo Hello, {% if name %} {{ name }} {% endif %}
+      params:
+        - name: name
+          prompt: Enter your name
+          optional: true
+
 - category: Demo
   description: A collection of demo commands showing how to use the CLI
   commands:
