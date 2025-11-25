@@ -1,5 +1,7 @@
 use crate::config::models::CommandDef;
+use crate::config::ParamDef;
 use dialoguer::Input;
+use regex::Regex;
 /** Argument collection and prompting. */
 use std::collections::HashMap;
 
@@ -14,24 +16,46 @@ pub fn collect_arguments(
 ) -> HashMap<String, String> {
     let mut collected = overrides.clone();
 
-    for arg in &cmd.params {
-        if collected.contains_key(&arg.name) {
+    // find all placeholders in the command
+    let re = Regex::new(r"\{\{(.*?)}}").unwrap();
+    let mut placeholders: Vec<&str> = vec![];
+    for (_, [placeholder]) in re.captures_iter(&cmd.exec).map(|c| c.extract()) {
+        placeholders.push(placeholder.trim());
+    }
+
+    // prompt for missing arguments
+    for placeholder in placeholders {
+
+        if collected.contains_key(placeholder) {
             continue;
         }
 
-        // Prompt for the required argument
-        let mut prompt = if arg.prompt.trim().is_empty() {
-            format!("Enter value for {}", arg.name)
-        } else {
-            arg.prompt.clone()
+        // param config provided?
+        let default = ParamDef {
+            name: placeholder.to_string(),
+            prompt: "".to_string(),
+            optional: false,
+            default: None,
         };
+        let param = cmd
+            .params
+            .iter()
+            .find(|p| p.name == placeholder)
+            .unwrap_or(&default);
 
+        // build prompt
         let mut input = Input::new();
 
-        if let Some(default) = &arg.default {
+        let mut prompt = if param.prompt.trim().is_empty() {
+            format!("Enter value for '{}'", param.name)
+        } else {
+            param.prompt.clone()
+        };
+
+        if let Some(default) = &param.default {
             input = input.default(default.clone()).show_default(false);
             prompt = format!("{} [default: {}]", prompt, default)
-        } else if arg.optional {
+        } else if param.optional {
             input = input.allow_empty(true);
             prompt = format!("{} [optional]", prompt)
         }
@@ -42,7 +66,7 @@ pub fn collect_arguments(
             .unwrap_or_default();
 
         if !value.is_empty() {
-            collected.insert(arg.name.clone(), value);
+            collected.insert(param.name.clone(), value);
             continue;
         }
     }

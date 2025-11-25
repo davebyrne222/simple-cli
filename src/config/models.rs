@@ -87,6 +87,7 @@ pub struct CommandDef {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ParamDef {
     pub name: String,
+    #[serde(default)]
     pub prompt: String,
     #[serde(default)]
     pub optional: bool,
