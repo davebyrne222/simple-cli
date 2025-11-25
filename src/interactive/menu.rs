@@ -1,8 +1,7 @@
 /** Interactive menu runner. */
-use std::collections::HashMap;
 use crate::config::models::{Config, GlobalContext, CommandDef};
 use crate::commands::{find_command, run_command};
-use crate::commands::arguments::collect_arguments;
+use crate::commands::arguments::substitute_parameters;
 use dialoguer::{Select, console::Term};
 
 #[derive(Clone, Debug)]
@@ -64,7 +63,6 @@ Run interactive mode with hierarchical navigation.
 pub fn run_interactive(
     cfg: &Config,
     ctx: &mut GlobalContext,
-    arg_overrides: &HashMap<String, String>,
 ) {
     let mut current_level = MenuLevel::Root;
 
@@ -78,7 +76,7 @@ pub fn run_interactive(
                 // so headers don't linger and previously printed command/output stay intact.
                 let _ = Term::stdout().clear_last_lines(prompt_lines + items_lines);
 
-                let action = handle_menu_selection(selected_item, cfg, ctx, arg_overrides, &current_level);
+                let action = handle_menu_selection(selected_item, cfg, ctx, &current_level);
                 match action {
                     MenuAction::Navigate(new_level) => {
                         current_level = new_level;
@@ -425,7 +423,6 @@ fn handle_menu_selection(
     item: MenuItem,
     cfg: &Config,
     ctx: &mut GlobalContext,
-    arg_overrides: &HashMap<String, String>,
     current_level: &MenuLevel,
 ) -> MenuAction {
     match item {
@@ -435,7 +432,7 @@ fn handle_menu_selection(
         MenuItem::NavigateCategory(idx) => MenuAction::Navigate(MenuLevel::Category(idx)),
         MenuItem::NavigateSubCategory(ci, si) => MenuAction::Navigate(MenuLevel::SubCategory(ci, si)),
         MenuItem::ExecuteCommand(ci, maybe_si, ki) => {
-            handle_command_selection(cfg, ctx, arg_overrides, ci, maybe_si, ki);
+            handle_command_selection(cfg, ctx, ci, maybe_si, ki);
             MenuAction::Stay
         }
     }
@@ -452,7 +449,6 @@ fn navigate_back(current_level: &MenuLevel) -> MenuLevel {
 fn handle_command_selection(
     cfg: &Config,
     ctx: &mut GlobalContext,
-    arg_overrides: &HashMap<String, String>,
     category_idx: usize,
     subcategory_idx: Option<usize>,
     command_idx: usize,
@@ -467,14 +463,14 @@ fn handle_command_selection(
         match find_command(cfg.categories.as_slice(), pre_cmd_name) {
             Some(pre_cmd) => {
                 println!("Running pre-command: {} (`{}`)", pre_cmd.name, pre_cmd.exec);
-                handle_command_execution(cfg, ctx, pre_cmd, arg_overrides)
+                handle_command_execution(cfg, ctx, pre_cmd)
             }
             None => eprintln!("Pre-command '{}' not found", pre_cmd_name),
         }
     }
 
     // Execute the main command
-    handle_command_execution(cfg, ctx, cmd, arg_overrides);
+    handle_command_execution(cfg, ctx, cmd);
     // Spacer between command output and the next interactive menu
     println!();
 }
@@ -483,9 +479,8 @@ fn handle_command_execution(
     cfg: &Config,
     ctx: &mut GlobalContext,
     cmd: &CommandDef,
-    arg_overrides: &HashMap<String, String>,
 ){
-    let args = collect_arguments(cmd, arg_overrides);
+    let args = substitute_parameters(cmd, None, true);
     if let Err(e) = run_command(cmd, cfg, ctx, &args){
         eprintln!("Failed to execute command: {}", e)
     }
